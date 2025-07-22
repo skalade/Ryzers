@@ -7,7 +7,6 @@ export MLIR_AIE_BUILD_DIR="/ryzers/mlir-aie"
 source /opt/xilinx/xrt/setup.sh
 export PATH="${NEW_CMAKE_DIR}/bin":"${PATH}"
 
-cd ${MLIR_AIE_BUILD_DIR}
 source ${MLIR_AIE_BUILD_DIR}/ironenv/bin/activate
 
 export MLIR_AIE_INSTALL_DIR="$(pip show mlir_aie | grep ^Location: | awk '{print $2}')/mlir_aie"

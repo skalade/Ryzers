@@ -40,4 +40,4 @@ cd /ryzers/mlir-aie/programming_examples
 
 ---
 
-For further details and learning material, refer to the [MLIR-AIE repository](https://github.com/xilinx/mlir-aie) repository.
+For further details and learning material, refer to the [MLIR-AIE repository](https://github.com/xilinx/mlir-aie).
