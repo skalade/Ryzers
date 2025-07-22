@@ -1,0 +1,8 @@
+# ryzer config schema
+
+environment_variables:
+- "HSA_OVERRIDE_GFX_VERSION=11.0.0"  # Required for HIP to write kernels
+
+docker_extra_run_flags:
+    - "--device=/dev/accel/accel0:/dev/accel/accel0"
+    - "--ulimit memlock=-1"
