@@ -1,4 +1,5 @@
-FROM rocm/pytorch:rocm6.3.4_ubuntu24.04_py3.12_pytorch_release_2.4.0
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ARG DRIVER_VERSION="51b9400"
 
