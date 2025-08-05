@@ -8,4 +8,4 @@ port_mappings:
   - "8888:8888"  # Port mapping for JupyterLab
 
 volume_mappings:
-- "$PWD/packages/npu/npueval/mounted:/ryzers/results"
+- "$PWD/mounted:/ryzers/results"
