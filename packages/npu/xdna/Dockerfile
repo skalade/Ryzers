@@ -1,8 +1,6 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-ARG DRIVER_VERSION="51b9400"
-
 # required by rocm driver
 RUN groupadd -f render && usermod -aG render root
 
@@ -15,34 +13,36 @@ RUN apt-get update && apt-get install -y \
 	git \
 	curl \
 	bash \
-	wget
+	wget \
+	libboost-dev \
+	git-lfs
 
-RUN git clone https://github.com/amd/xdna-driver && \
-    cd xdna-driver && \
-    git checkout $DRIVER_VERSION && \
-    git submodule update --init --recursive
+COPY xrt_202520.2.20.41_24.04-amd64-base.deb .
+COPY xrt_plugin.2.20.250102.3.rel_24.04-amd64-amdxdna.deb .
+COPY xrt_202520.2.20.41_24.04-amd64-base-dev.deb .
+COPY xrt_202520.2.20.41_24.04-amd64-npu.deb .
+RUN dpkg -i /ryzers/xrt_*.deb || apt-get install -f -y
 
-# Install build dependencies
-RUN cd /ryzers/xdna-driver/tools && \
-    apt-get update && \
-    ./amdxdna_deps.sh -docker
+RUN git clone https://github.com/amd/RyzenAI-SW
+RUN cd RyzenAI-SW && \
+    git lfs install && \
+    git lfs pull
 
-# Build XRT
-RUN cd /ryzers/xdna-driver/xrt/build/ && \
-    ./build.sh -npu -opt -noctest
+COPY fix_symlinks.sh .
 
-# Build XDNA driver
-RUN cd /ryzers/xdna-driver/build && \
-    ./build.sh -release && \
-    ./build.sh -package
+RUN apt install -y vulkan-tools mesa-vulkan-drivers
+RUN add-apt-repository ppa:deadsnakes/ppa && \
+	apt update && \
+	apt install -y python3.10 python3.10-venv python3.10-dev libboost-filesystem1.74.0
 
-# Finally, save and install the XRT/XDNA debian packages
-# these will also need to be installed on the host system
-# if they haven't been already
-RUN mkdir /ryzers/debs && \
-    cp /ryzers/xdna-driver/build/Release/xrt_*x86_64-amdxdna.deb /ryzers/debs/ && \
-    cp /ryzers/xdna-driver/xrt/build/Release/xrt*-base.deb /ryzers/debs/ && \
-	dpkg -i /ryzers/debs/*.deb
+RUN cp /ryzers/fix_symlinks.sh /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/ryzen14/
+RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/ryzen14/ && ./fix_symlinks.sh
+
+RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/samples && \
+	curl -o video_call.mp4 https://videos.pexels.com/video-files/8136072/8136072-hd_1920_1080_25fps.mp4 && \
+	mkdir build-samples && \
+	cmake -S $PWD -B $PWD/build-samples && \
+	cmake --build $PWD/build-samples --config Release
 
 # Cleanup
 ENV SHELL=/bin/bash
