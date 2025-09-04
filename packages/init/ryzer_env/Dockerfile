@@ -4,6 +4,8 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
+SHELL ["/bin/bash", "-lc"]
+
 # handle add the render group
 RUN groupadd --system render
 RUN groupadd --system kvm
@@ -11,6 +13,29 @@ RUN groupadd --system kvm
 RUN usermod -aG render root
 RUN usermod -aG video root
 RUN usermod -aG kvm root
+
+# add dependencies
+RUN apt-get update && \
+    apt-get install -y \
+	python3 \
+    	python3.12 \
+	python3.12-dev \
+	python3.12-venv \
+	python3-pip
+
+RUN python3 -m venv /ryzers/TheRock
+
+ENV PATH="/ryzers/TheRock/bin:$PATH"
+
+# install ROCm
+RUN  python3 -m pip install \
+  --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ \
+  rocm[libraries,devel]
+
+# install torch
+RUN  python3 -m pip install \
+  --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ \
+  torch torchaudio torchvision
 
 # add a sign-of-life test
 WORKDIR /ryzers
