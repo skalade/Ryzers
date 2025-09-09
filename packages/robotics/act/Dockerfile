@@ -10,8 +10,8 @@ WORKDIR /ryzers
 RUN apt-get update && apt-get install -y git \
 	vim \
 	wget \
-	libegl1-mesa \
-	libgles2-mesa
+	libegl1-mesa-dev \
+	libgles2-mesa-dev
 
 RUN git clone https://github.com/tonyzhaozh/act
 
