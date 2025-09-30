@@ -1,3 +1,6 @@
+# Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+#
 # script modified from https://learnopencv.com/smolvla-lerobot-vision-language-action-model/
 # ran from commit: https://github.com/huggingface/lerobot/commits/5c87365cc160617c45dc5d1bbb3788de010271a7 (jun 13)
 
