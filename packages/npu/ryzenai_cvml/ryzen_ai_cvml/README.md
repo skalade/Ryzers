@@ -30,6 +30,20 @@ colcon build --packages-select ryzen_ai_depth_estimation
 
 ## Usage
 
+```
+colcon build --packages-select ryzen_ai_depth_estimation --cmake-clean-cache
+source install/setup.bash
+
+ros2 run ryzen_ai_cvml video_publisher.py \
+    --ros-args \
+    -p video_path:=/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/samples/video_call.mp4 \
+    -p topic:=/camera/image_raw
+
+ros2 run ryzen_ai_cvml depth_estimation_node
+```
+
+
+
 ### Launch the node:
 
 ```bash
