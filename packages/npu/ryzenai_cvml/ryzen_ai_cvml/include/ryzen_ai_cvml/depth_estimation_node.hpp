@@ -1,5 +1,5 @@
-#ifndef RYZEN_AI_DEPTH_ESTIMATION__DEPTH_ESTIMATION_NODE_HPP_
-#define RYZEN_AI_DEPTH_ESTIMATION__DEPTH_ESTIMATION_NODE_HPP_
+#ifndef RYZEN_AI_CVML__DEPTH_ESTIMATION_NODE_HPP_
+#define RYZEN_AI_CVML__DEPTH_ESTIMATION_NODE_HPP_
 
 #include <memory>
 #include <string>
@@ -9,7 +9,7 @@
 #include "cvml-depth-estimation.h"
 #include "cvml-context.h"
 
-namespace ryzen_ai_depth_estimation
+namespace ryzen_ai_cvml
 {
 
 class DepthEstimationNode : public rclcpp::Node
@@ -34,6 +34,6 @@ private:
   std::string output_topic_;
 };
 
-}  // namespace ryzen_ai_depth_estimation
+}  // namespace ryzen_ai_cvml
 
-#endif  // RYZEN_AI_DEPTH_ESTIMATION__DEPTH_ESTIMATION_NODE_HPP_
+#endif  // RYZEN_AI_CVML__DEPTH_ESTIMATION_NODE_HPP_

@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ryzen_ai_depth_estimation</name>
+  <name>ryzen_ai_cvml</name>
   <version>1.0.0</version>
-  <description>ROS2 node for Ryzen AI depth estimation</description>
+  <description>ROS2 nodes for Ryzen AI CVML features (depth estimation, face mesh)</description>
   <maintainer email="user@example.com">User</maintainer>
   <license>MIT</license>
 

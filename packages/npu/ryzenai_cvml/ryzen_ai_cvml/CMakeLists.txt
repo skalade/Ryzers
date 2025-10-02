@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(ryzen_ai_depth_estimation)
+project(ryzen_ai_cvml)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -25,13 +25,12 @@ include_directories(include)
 include_directories(${AMD_CVML_SDK_ROOT}/include)
 include_directories(${cv_bridge_INCLUDE_DIRS})
 
-# Create executable
+# Create depth estimation executable
 add_executable(depth_estimation_node
   src/main.cpp
   src/depth_estimation_node.cpp
 )
 
-# Specify libraries to link
 ament_target_dependencies(depth_estimation_node
   rclcpp
   sensor_msgs
@@ -45,9 +44,49 @@ target_link_libraries(depth_estimation_node
   ${RyzenAILibrary_LIBS}
 )
 
-# Install executable
+# Create face mesh executable
+add_executable(face_mesh_node
+  src/face_mesh_main.cpp
+  src/face_mesh_node.cpp
+)
+
+ament_target_dependencies(face_mesh_node
+  rclcpp
+  sensor_msgs
+  cv_bridge
+  image_transport
+  std_msgs
+)
+
+target_link_libraries(face_mesh_node
+  ${OpenCV_LIBRARIES}
+  ${RyzenAILibrary_LIBS}
+)
+
+# Create face detection executable
+add_executable(face_detection_node
+  src/face_detection_main.cpp
+  src/face_detection_node.cpp
+)
+
+ament_target_dependencies(face_detection_node
+  rclcpp
+  sensor_msgs
+  cv_bridge
+  image_transport
+  std_msgs
+)
+
+target_link_libraries(face_detection_node
+  ${OpenCV_LIBRARIES}
+  ${RyzenAILibrary_LIBS}
+)
+
+# Install executables
 install(TARGETS
   depth_estimation_node
+  face_mesh_node
+  face_detection_node
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files

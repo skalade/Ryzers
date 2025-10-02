@@ -35,8 +35,6 @@ RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/samples && \
 	cmake -S $PWD -B $PWD/build-samples && \
 	cmake --build $PWD/build-samples --config Release
 
-COPY ryzen_ai_depth_estimation ./ryzen_ai_depth_estimation
-
 RUN export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}') && \
     curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb" && \
     dpkg -i /tmp/ros2-apt-source.deb && \
@@ -50,6 +48,8 @@ RUN pip install catkin_pkg opencv-python
 RUN pip install "numpy<2"
 
 ENV LD_LIBRARY_PATH=/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu:/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux:$LD_LIBRARY_PATH
+
+COPY ryzen_ai_cvml ./ryzen_ai_cvml
 
 # Cleanup
 ENV SHELL=/bin/bash
