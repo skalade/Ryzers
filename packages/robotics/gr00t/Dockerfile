@@ -18,7 +18,7 @@ RUN pip install --no-build-isolation "git+https://github.com/facebookresearch/py
 # Install flash attention
 ENV FLASH_ATTENTION_TRITON_AMD_ENABLE="TRUE" 
 ENV BUILD_TYPE="rocm"
-RUN git clone --recursive git@github.com:ROCm/flash-attention.git && \
+RUN git clone --recursive https://github.com/ROCm/flash-attention && \
     cd flash-attention && \
     git checkout main_perf && \
     python setup.py install
