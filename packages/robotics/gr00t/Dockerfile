@@ -40,6 +40,7 @@ RUN git clone --recursive https://github.com/ROCm/flash-attention && \
     python setup.py install
 
 # Build torchcodec from source
+ENV PYTORCH_ROCM_ARCH="gfx1151"
 RUN git clone https://github.com/pytorch/torchcodec.git && \
     cd /ryzers/torchcodec && \
     sed -i 's/-Werror//g' src/torchcodec/_core/CMakeLists.txt && \
