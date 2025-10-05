@@ -13,6 +13,8 @@ RUN apt-get install -y \
     rocm-dev \
     hipcc \
     cmake \
+    python3-pybind11 \
+    pybind11-dev \
     ffmpeg \
     libavdevice-dev \
     libavfilter-dev \
