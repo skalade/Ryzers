@@ -35,4 +35,4 @@ policy = Gr00tPolicy(
 
 # Run inference
 action_chunk = policy.get_action(dataset[0])
-
+print(action_chunk)
