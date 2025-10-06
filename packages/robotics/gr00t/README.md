@@ -9,4 +9,6 @@ ryzers build gr00t
 ryzers run
 ```
 
+**NOTE**: the image can take as long as 30min to build because some dependencies like pytorch3d need to be built from source.
+
 Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.
