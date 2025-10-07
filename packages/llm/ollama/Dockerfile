@@ -1,15 +1,16 @@
 # Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
 
-ARG BASE_IMAGE
+ARG BASE_IMAGE=ubuntu:24.04
 FROM ${BASE_IMAGE}
+
+# add dependencies
+RUN apt-get update && \
+    apt-get install -y \
+	curl
 
 RUN curl -fsSL https://ollama.com/install.sh | sh
 RUN python3 -m pip install ollama
-
-# handle add the render group
-RUN groupadd -f render
-RUN usermod -aG render root
 
 # Copy test script
 WORKDIR /ryzers

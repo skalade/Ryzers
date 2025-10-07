@@ -4,13 +4,51 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# handle add the render group
-RUN groupadd --system render
-RUN groupadd --system kvm
+SHELL ["/bin/bash", "-lc"]
+
+
+RUN getent group render || groupadd render
+RUN getent group video || groupadd video
+RUN getent group kvm || groupadd kvm
+
 
 RUN usermod -aG render root
 RUN usermod -aG video root
 RUN usermod -aG kvm root
+
+#################################
+# Install ROCm Using ROCm Docker
+#################################
+
+
+
+
+#####################################
+# Install ROCm Using TheRock Steps
+#####################################
+
+# add dependencies
+# RUN apt-get update && \
+#     apt-get install -y \
+# 	python3 \
+#     	python3.12 \
+# 	python3.12-dev \
+# 	python3.12-venv \
+# 	python3-pip
+
+# RUN python3 -m venv /ryzers/venv_ryzers
+# ENV PATH="/ryzers/venv_ryzers/bin:$PATH"
+
+# RUN  python3 -m pip install \
+#   --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ \
+#   rocm[libraries,devel]
+
+# # install torch
+# RUN  python3 -m pip install \
+#   --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ \
+#   torch torchaudio torchvision
+
+
 
 # add a sign-of-life test
 WORKDIR /ryzers
