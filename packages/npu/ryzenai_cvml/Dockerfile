@@ -40,7 +40,7 @@ RUN export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-inf
     dpkg -i /tmp/ros2-apt-source.deb && \
     rm /tmp/ros2-apt-source.deb
 
-RUN apt-get update && apt-get install -y ros-kilted-ros-base ros-dev-tools ros-kilted-cv-bridge ros-kilted-image-transport
+RUN apt-get update && apt-get install -y ros-kilted-ros-base ros-dev-tools ros-kilted-cv-bridge ros-kilted-image-transport ros-kilted-web-video-server
 
 RUN echo "source /opt/ros/kilted/setup.bash" >> ~/.bashrc
 
