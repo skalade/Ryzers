@@ -1,0 +1,200 @@
+FROM rocm/pytorch:rocm7.0_ubuntu24.04_py3.12_pytorch_release_2.6.0
+
+SHELL ["/bin/bash", "-lc"]
+
+
+RUN getent group render || groupadd render
+RUN getent group video || groupadd video
+RUN getent group kvm || groupadd kvm
+
+
+RUN usermod -aG render root
+RUN usermod -aG video root
+RUN usermod -aG kvm root
+
+ARG DRIVER_VERSION="0ad5aa3"
+
+WORKDIR /ryzers
+
+RUN apt-get update && apt-get install -y \
+	git \
+	curl \
+	bash \
+	wget
+
+RUN git clone https://github.com/amd/xdna-driver && \
+    cd xdna-driver && \
+    git checkout $DRIVER_VERSION && \
+    git submodule update --init --recursive
+
+# Install build dependencies
+RUN cd /ryzers/xdna-driver/tools && \
+    apt-get update && \
+    ./amdxdna_deps.sh -docker
+
+# Build XRT
+RUN cd /ryzers/xdna-driver/xrt/build/ && \
+    ./build.sh -npu -opt -noctest
+
+# Build XDNA driver
+RUN cd /ryzers/xdna-driver/build && \
+    ./build.sh -release && \
+    ./build.sh -package
+
+# Finally, save and install the XRT/XDNA debian packages
+# these will also need to be installed on the host system
+# if they haven't been already
+RUN mkdir /ryzers/debs && \
+    cp /ryzers/xdna-driver/build/Release/xrt_plugin.2.20.0_24.04-amd64-amdxdna.deb /ryzers/debs/ && \
+    cp /ryzers/xdna-driver/xrt/build/Release/xrt_202520.2.20.0_24.04-amd64-base.deb /ryzers/debs/ && \
+	dpkg -i /ryzers/debs/*.deb
+
+ENV SHELL=/bin/bash
+
+
+WORKDIR /ryzers
+COPY setup.sh /ryzers/setup.sh
+COPY entrypoint.sh /ryzers/entrypoint.sh
+
+# Set environment variable to suppress prompts in scripts
+ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-l", "-c"]
+
+# IRON requires python venv
+RUN apt-get -y install python3.12-venv
+
+# Make life easier
+RUN apt-get -y install vim
+
+RUN git clone --recursive https://github.com/xilinx/mlir-aie.git /ryzers/mlir-aie && \
+    cd /ryzers/mlir-aie && \
+    git checkout c105c0b && \
+    git submodule update --recursive
+
+# Comment out NPU check - we don't have access to /dev/accel during docker build
+RUN sed -i '31s/^/#/' /ryzers/mlir-aie/utils/quick_setup.sh
+
+# Lock down wheels
+RUN sed -i '61s|.*|pip install mlir_aie -f https://github.com/Xilinx/mlir-aie/releases/download/latest-wheels/mlir_aie-0.0.1.2025051904+c105c0b-cp312-cp312-manylinux_2_35_x86_64.whl|' /ryzers/mlir-aie/utils/quick_setup.sh
+RUN sed -i '64s|.*|pip install llvm_aie -f https://github.com/Xilinx/llvm-aie/releases/download/nightly/llvm_aie-19.0.0.2025041501+b2a279c1-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl|' /ryzers/mlir-aie/utils/quick_setup.sh
+
+# Setup IRON
+RUN cd /ryzers/mlir-aie && \
+    source /opt/xilinx/xrt/setup.sh && \
+    source /ryzers/mlir-aie/utils/quick_setup.sh
+
+# Copy the new AIE pragma utils.h to mlir_aie/include/ so it's picked up when doing #include "aie_kernel_utils.h"
+RUN cp /ryzers/mlir-aie/aie_kernels/aie_kernel_utils.h /ryzers/mlir-aie/ironenv/lib/python3.12/site-packages/mlir_aie/include/
+
+# Install jupyter for notebooks
+RUN source /ryzers/setup.sh && \
+    pip install jupyterlab
+
+# Cleanup
+ENV SHELL=/bin/bash
+
+WORKDIR /ryzers
+
+# Install NPUEval
+RUN git clone https://github.com/amdresearch/npueval
+RUN source /ryzers/setup.sh && \
+    cd /ryzers/npueval && \
+    python3 -m pip install -e .
+
+# Cleanup
+ENV SHELL=/bin/bash
+
+# Allow build-time argument for ROS distro (jazzy or kilted)
+ARG ROS_DISTRO=kilted
+ENV ROS_DISTRO=${ROS_DISTRO}
+
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 1. Set locale
+RUN apt-get update && apt-get install -y locales \
+ && locale-gen en_US en_US.UTF-8 \
+ && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+ && rm -rf /var/lib/apt/lists/*
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+
+# 2. Enable universe repo
+RUN apt-get update && apt-get install -y software-properties-common curl gnupg2 \
+ && add-apt-repository universe \
+ && rm -rf /var/lib/apt/lists/*
+
+# 3. Add ROS 2 apt repository
+RUN apt update && sudo apt install curl -y && \
+   export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F\" '{print $4}') && \
+   curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb" && \
+dpkg -i /tmp/ros2-apt-source.deb
+
+
+# 4. Install ROS 2 (desktop variant)
+RUN apt-get update \
+ && apt-get upgrade -y \
+ && apt-get install -y ros-${ROS_DISTRO}-desktop \
+ && rm -rf /var/lib/apt/lists/*
+
+# 5. Install dev tools
+RUN apt-get update \
+ && apt-get install -y \
+    ros-dev-tools \
+    ros-${ROS_DISTRO}-cv-bridge \
+    ros-${ROS_DISTRO}-image-transport \
+    ros-${ROS_DISTRO}-web-video-server \
+ && rm -rf /var/lib/apt/lists/*
+
+
+# 6. Install Python packages
+RUN pip install catkin_pkg opencv-python
+RUN pip install "numpy<2"
+
+# 7. Source ROS environment
+SHELL ["/bin/bash", "-c"]
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc
+
+WORKDIR /ryzers
+
+# Suppress prompts in scripts
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+	libboost-filesystem1.74.0 \
+	vulkan-tools \
+	mesa-vulkan-drivers \
+	git-lfs
+
+RUN apt install -y vulkan-tools mesa-vulkan-drivers
+RUN add-apt-repository ppa:deadsnakes/ppa && \
+	apt update && \
+	apt install -y python3.10 python3.10-venv python3.10-dev libboost-filesystem1.74.0
+
+RUN git clone https://github.com/amd/RyzenAI-SW
+RUN cd RyzenAI-SW && \
+    git lfs install && \
+    git lfs pull
+
+COPY fix_symlinks.sh .
+RUN cp /ryzers/fix_symlinks.sh /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/ryzen14/
+RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/ryzen14/ && ./fix_symlinks.sh
+
+RUN cp /ryzers/fix_symlinks.sh /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu/
+RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu/ && ./fix_symlinks.sh
+
+RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/samples && \
+	curl -o video_call.mp4 https://videos.pexels.com/video-files/8136072/8136072-hd_1920_1080_25fps.mp4 && \
+	mkdir build-samples && \
+	cmake -S $PWD -B $PWD/build-samples && \
+	cmake --build $PWD/build-samples --config Release
+
+ENV LD_LIBRARY_PATH=/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu:/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux:$LD_LIBRARY_PATH
+
+# Cleanup
+RUN rm /ryzers/fix_symlinks.sh
+RUN rm -rf /ryzers/xdna-driver
+
+COPY test_xdna.sh .
+COPY test_npueval.sh .
+COPY test_cvml.sh .
