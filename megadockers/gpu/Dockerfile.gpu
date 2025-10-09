@@ -1,0 +1,100 @@
+FROM rocm/pytorch:rocm7.0_ubuntu24.04_py3.12_pytorch_release_2.6.0
+
+SHELL ["/bin/bash", "-lc"]
+
+
+RUN getent group render || groupadd render
+RUN getent group video || groupadd video
+RUN getent group kvm || groupadd kvm
+
+
+RUN usermod -aG render root
+RUN usermod -aG video root
+RUN usermod -aG kvm root
+
+# add dependencies
+RUN apt-get update && \
+    apt-get install -y \
+	konsole 
+
+
+ENV AMDGPUTOP_TIMEOUT=10s
+
+RUN wget https://github.com/Umio-Yasuno/amdgpu_top/releases/download/v0.11.0/amdgpu-top_0.11.0-1_amd64.deb \
+    -O amdgpu-top.deb
+RUN dpkg --install amdgpu-top.deb
+
+# Use an argument to get GPU architecture
+ARG HSA_OVERRIDE_GFX_VERSION
+ARG GFXSTRING
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    curl \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    rsync
+
+# Clone and build LlamaCPP
+WORKDIR /ryzers
+RUN git clone https://github.com/ggml-org/llama.cpp.git llamacpp && \
+    cd llamacpp && \
+    HIPCXX="$(hipconfig -l)/clang" HIP_PATH="$(hipconfig -R)" \
+    cmake -S . -B build -DLLAMA_CURL=ON -DGGML_HIP=ON -DAMDGPU_TARGETS=$GFXSTRING -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build --config Release -- -j 16
+
+# add dependencies
+RUN apt-get update && \
+    apt-get install -y \
+	curl
+
+RUN curl -fsSL https://ollama.com/install.sh | sh
+RUN python3 -m pip install ollama
+
+EXPOSE 11434
+
+# Install deps
+RUN apt-get update && apt-get install -y git vim wget
+
+RUN git clone https://github.com/huggingface/lerobot.git && \
+	cd lerobot && \
+	git checkout 5c87365cc160617c45dc5d1bbb3788de010271a7 && \
+	sed -i -E '/assert not torch\.isinf\((mean|std)\)\.any\(\)/ s/^([[:space:]]*)/\1#/' lerobot/common/policies/normalize.py
+
+RUN cd lerobot && \
+	pip install ".[smolvla]"
+
+
+# Install deps
+RUN apt-get update && apt-get install -y git \
+	vim \
+	wget \
+	libegl1-mesa-dev \
+	libgles2-mesa-dev
+
+RUN git clone https://github.com/tonyzhaozh/act
+
+RUN pip install matplotlib && \
+	pip install einops && \
+	pip install packaging && \
+	pip install h5py && \
+ 	pip install ipython && \
+	pip install dm_control && \
+	pip install pyquaternion
+
+
+COPY test_act.sh .
+COPY test_amdgputop.sh .
+COPY test_llamacpp.sh .
+COPY test_smolvla.py .
+COPY test_smolvla.sh .
+
+RUN chmod +x test_act.sh
+RUN chmod +x test_amdgputop.sh
+RUN chmod +x test_llamacpp.sh
+RUN chmod +x test_smolvla.sh
