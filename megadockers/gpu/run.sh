@@ -1,5 +1,3 @@
-#!/bin/bash
-
 docker run -it --rm \
   --shm-size 16G \
   --cap-add=SYS_PTRACE \
@@ -15,8 +13,8 @@ docker run -it --rm \
   -e LD_LIBRARY_PATH=/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux:/opt/xilinx/xrt/lib \
   -e DISPLAY=$DISPLAY \
   -v $PWD/mounted:/ryzers/results \
-  -v $PWD/notebooks:/ryzers/notebooks \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v $PWD/notebooks:/ryzers/notebooks \
   --device=/dev/kfd \
   --device=/dev/dri \
   --device=/dev/accel/accel0 \

@@ -176,14 +176,14 @@ RUN cd RyzenAI-SW && \
     git lfs install && \
     git lfs pull
 
-COPY fix_symlinks.sh .
-RUN cp /ryzers/fix_symlinks.sh /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/ryzen14/
-RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/ryzen14/ && ./fix_symlinks.sh
+COPY fix_symlinks.sh /ryzers/
+RUN cp /ryzers/fix_symlinks.sh RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/ryzen14/
+RUN cd RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/ryzen14/ && ./fix_symlinks.sh
 
-RUN cp /ryzers/fix_symlinks.sh /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu/
-RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu/ && ./fix_symlinks.sh
+RUN cp /ryzers/fix_symlinks.sh RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu/
+RUN cd RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu/ && ./fix_symlinks.sh
 
-RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/samples && \
+RUN cd RyzenAI-SW/Ryzen-AI-CVML-Library/samples && \
 	curl -o video_call.mp4 https://videos.pexels.com/video-files/8136072/8136072-hd_1920_1080_25fps.mp4 && \
 	mkdir build-samples && \
 	cmake -S $PWD -B $PWD/build-samples && \
@@ -192,9 +192,10 @@ RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/samples && \
 ENV LD_LIBRARY_PATH=/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu:/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux:$LD_LIBRARY_PATH
 
 # Cleanup
-RUN rm /ryzers/fix_symlinks.sh
 RUN rm -rf /ryzers/xdna-driver
 
 COPY test_xdna.sh .
 COPY test_npueval.sh .
 COPY test_cvml.sh .
+
+RUN pip install jupyterlab

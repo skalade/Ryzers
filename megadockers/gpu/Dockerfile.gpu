@@ -98,3 +98,5 @@ RUN chmod +x test_act.sh
 RUN chmod +x test_amdgputop.sh
 RUN chmod +x test_llamacpp.sh
 RUN chmod +x test_smolvla.sh
+
+RUN pip install jupyterlab
