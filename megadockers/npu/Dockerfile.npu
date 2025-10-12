@@ -198,4 +198,4 @@ COPY test_xdna.sh .
 COPY test_npueval.sh .
 COPY test_cvml.sh .
 
-RUN pip install jupyterlab
+RUN pip install jupyterlab matplotlib
