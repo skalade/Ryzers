@@ -26,7 +26,7 @@ def generate_launch_description():
 
     # Create the face mesh node
     face_mesh_node = Node(
-        package='ryzen_ai_cvml',
+        package='cvml_ros',
         executable='face_mesh_node',
         name='face_mesh_node',
         parameters=[{

@@ -10,7 +10,7 @@
 #include "cvml-face-mesh.h"
 #include "cvml-context.h"
 
-namespace ryzen_ai_cvml
+namespace cvml_ros
 {
 
 class FaceMeshNode : public rclcpp::Node
@@ -37,6 +37,6 @@ private:
   std::string fd_model_type_;
 };
 
-}  // namespace ryzen_ai_cvml
+}  // namespace cvml_ros
 
 #endif  // RYZEN_AI_CVML__FACE_MESH_NODE_HPP_

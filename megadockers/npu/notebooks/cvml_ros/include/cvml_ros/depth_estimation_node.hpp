@@ -9,7 +9,7 @@
 #include "cvml-depth-estimation.h"
 #include "cvml-context.h"
 
-namespace ryzen_ai_cvml
+namespace cvml_ros
 {
 
 class DepthEstimationNode : public rclcpp::Node
@@ -34,6 +34,6 @@ private:
   std::string output_topic_;
 };
 
-}  // namespace ryzen_ai_cvml
+}  // namespace cvml_ros
 
 #endif  // RYZEN_AI_CVML__DEPTH_ESTIMATION_NODE_HPP_

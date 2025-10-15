@@ -1,12 +1,12 @@
 #include "rclcpp/rclcpp.hpp"
-#include "ryzen_ai_cvml/depth_estimation_node.hpp"
+#include "cvml_ros/depth_estimation_node.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
   try {
-    auto node = std::make_shared<ryzen_ai_cvml::DepthEstimationNode>();
+    auto node = std::make_shared<cvml_ros::DepthEstimationNode>();
     rclcpp::spin(node);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(rclcpp::get_logger("main"), "Exception in main: %s", e.what());

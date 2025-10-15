@@ -20,7 +20,7 @@ def generate_launch_description():
 
     # Create the depth estimation node
     depth_estimation_node = Node(
-        package='ryzen_ai_cvml',
+        package='cvml_ros',
         executable='depth_estimation_node',
         name='depth_estimation_node',
         parameters=[{

@@ -1,9 +1,9 @@
-#include "ryzen_ai_cvml/face_detection_node.hpp"
+#include "cvml_ros/face_detection_node.hpp"
 #include <opencv2/opencv.hpp>
 #include <sstream>
 #include <iomanip>
 
-namespace ryzen_ai_cvml
+namespace cvml_ros
 {
 
 FaceDetectionNode::FaceDetectionNode(const rclcpp::NodeOptions & options)
@@ -154,4 +154,4 @@ void FaceDetectionNode::imageCallback(const sensor_msgs::msg::Image::ConstShared
   }
 }
 
-}  // namespace ryzen_ai_cvml
+}  // namespace cvml_ros

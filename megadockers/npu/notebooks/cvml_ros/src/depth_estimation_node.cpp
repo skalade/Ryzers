@@ -1,7 +1,7 @@
-#include "ryzen_ai_cvml/depth_estimation_node.hpp"
+#include "cvml_ros/depth_estimation_node.hpp"
 #include <opencv2/opencv.hpp>
 
-namespace ryzen_ai_cvml
+namespace cvml_ros
 {
 
 DepthEstimationNode::DepthEstimationNode(const rclcpp::NodeOptions & options)
@@ -121,4 +121,4 @@ void DepthEstimationNode::imageCallback(const sensor_msgs::msg::Image::ConstShar
   }
 }
 
-}  // namespace ryzen_ai_cvml
+}  // namespace cvml_ros

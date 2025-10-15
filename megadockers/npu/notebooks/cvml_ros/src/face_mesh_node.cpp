@@ -1,7 +1,7 @@
-#include "ryzen_ai_cvml/face_mesh_node.hpp"
+#include "cvml_ros/face_mesh_node.hpp"
 #include <opencv2/opencv.hpp>
 
-namespace ryzen_ai_cvml
+namespace cvml_ros
 {
 
 FaceMeshNode::FaceMeshNode(const rclcpp::NodeOptions & options)
@@ -139,4 +139,4 @@ void FaceMeshNode::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr &
   }
 }
 
-}  // namespace ryzen_ai_cvml
+}  // namespace cvml_ros

@@ -26,7 +26,7 @@ def generate_launch_description():
 
     # Create the face detection node
     face_detection_node = Node(
-        package='ryzen_ai_cvml',
+        package='cvml_ros',
         executable='face_detection_node',
         name='face_detection_node',
         parameters=[{

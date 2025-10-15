@@ -1,12 +1,12 @@
 #include "rclcpp/rclcpp.hpp"
-#include "ryzen_ai_cvml/face_mesh_node.hpp"
+#include "cvml_ros/face_mesh_node.hpp"
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
 
   try {
-    auto node = std::make_shared<ryzen_ai_cvml::FaceMeshNode>();
+    auto node = std::make_shared<cvml_ros::FaceMeshNode>();
     rclcpp::spin(node);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(rclcpp::get_logger("main"), "Exception in main: %s", e.what());
