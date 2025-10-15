@@ -194,8 +194,9 @@ ENV LD_LIBRARY_PATH=/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux/onnx/cpu:/ryz
 # Cleanup
 RUN rm -rf /ryzers/xdna-driver
 
-COPY test_xdna.sh .
-COPY test_npueval.sh .
-COPY test_cvml.sh .
+RUN pip install jupyterlab matplotlib timm
 
-RUN pip install jupyterlab matplotlib
+RUN apt-get install tree
+
+COPY notebooks /ryzers/
+WORKDIR /ryzers/notebooks
