@@ -30,7 +30,7 @@ FaceDetectionNode::FaceDetectionNode(const rclcpp::NodeOptions & options)
     }
 
     // Set GPU backend
-    context_->SetInferenceBackend(amd::cvml::Context::InferenceBackend::GPU);
+    context_->SetInferenceBackend(amd::cvml::Context::InferenceBackend::AUTO);
 
     // Set streaming mode for real-time processing
     context_->SetStreamingMode(amd::cvml::Context::StreamingMode::ONLINE_STREAMING);
