@@ -72,23 +72,6 @@ Validation completed. Please run the command '--verbose' option for more details
 
 ```
 
-Test NPUEval
-```
-test_npueval.sh
-```
-
-Expected output:
-```
-Kernel: abs_int8_wrapper
-Using canonical solution...
-/ryzers/results/canonical/abs_int8_wrapper.mlir generated successfully
-abs_int8_wrapper.xclbin, abs_int8_wrapper.bin built
-Trace written to /ryzers/results/canonical/abs_int8_wrapper_trace.json
-Result: Pass
-Passed: 1/1
-```
-
-
 Test CVML:
 ```
 test_cvml.sh
