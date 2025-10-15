@@ -169,7 +169,8 @@ int main(int argc, char** argv) {
     if (!context) {
       std::cerr << "Failed to create context" << std::endl;
     } else {
-      context->SetInferenceBackend(amd::cvml::Context::InferenceBackend::CPU);
+      // this will fallback to CPU
+      context->SetInferenceBackend(amd::cvml::Context::InferenceBackend::GPU);
       SetContextStreamingMode(fd_sample.src_path_, context);
 
       // create the facedetector feature instances

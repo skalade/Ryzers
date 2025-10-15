@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
     if (!context) {
       std::cerr << "Failed to create context" << std::endl;
     } else {
-      // Set CPU backend
+      // This will fallback to CPU
       context->SetInferenceBackend(amd::cvml::Context::InferenceBackend::GPU);
       std::cout << "Using CPU backend" << std::endl;
 
