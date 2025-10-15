@@ -17,7 +17,7 @@ find_package(std_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 
 # Find Ryzen AI CVML Library
-set(AMD_CVML_SDK_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../Ryzen-AI-CVML-Library)
+set(AMD_CVML_SDK_ROOT /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library)
 find_package(RyzenAILibrary REQUIRED PATHS ${AMD_CVML_SDK_ROOT})
 
 # Include directories
