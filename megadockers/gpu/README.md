@@ -1,11 +1,9 @@
 # NPU Megadocker
 
-Run Flags:   -it --rm --shm-size 16G --cap-add=SYS_PTRACE  --network=host --ipc=host -e AMDGPUTOP_TIMEOUT=10s -v $PWD/llamacpp_cache:/root/.cache -p 11434:11434 -v $PWD/workspace/.ollama:/root/.ollama/ -e HSA_OVERRIDE_GFX_VERSION=11.0.0 --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined --group-add video --group-add render  -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix
-
 ## Build
 
 ```
-docker build -t roscon_gpu --build-arg GFXSTRING=gfx1151 -f Dockerfile.gpu .
+docker build -t roscon_gpu --build-arg GFXSTRING=gfx1151 --build-arg ROS_DISTRO=kilted -f Dockerfile.gpu .
 ```
 
 ## Run
