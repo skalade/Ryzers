@@ -146,3 +146,5 @@ RUN pip install jupyterlab "numpy<2"
 
 COPY notebooks /ryzers/
 WORKDIR /ryzers/notebooks
+
+RUN chmod -R 777 /ryzers/notebooks
