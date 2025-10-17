@@ -34,7 +34,7 @@ def process_frame(frame, model, transform, device):
 
     depth_map = prediction.cpu().numpy()
     depth_map = cv2.normalize(depth_map, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-    depth_colored = cv2.applyColorMap(depth_map, cv2.COLORMAP_SPRING)
+    depth_colored = cv2.applyColorMap(depth_map, cv2.COLORMAP_COOL)
 
     return depth_colored
 
