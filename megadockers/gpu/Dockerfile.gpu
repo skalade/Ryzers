@@ -131,6 +131,13 @@ RUN apt-get update && apt-get install -y ros-dev-tools \
 SHELL ["/bin/bash", "-c"]
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc
 
+# 7. Vulkan
+RUN apt-get update \
+&& wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | tee /etc/apt/trusted.gpg.d/lunarg.asc \
+&& wget -qO /etc/apt/sources.list.d/lunarg-vulkan-noble.list https://packages.lunarg.com/vulkan/lunarg-vulkan-noble.list \
+&& apt update \
+&& apt install -y vulkan-sdk
+
 COPY test_act.sh .
 COPY test_amdgputop.sh .
 COPY test_llamacpp.sh .
