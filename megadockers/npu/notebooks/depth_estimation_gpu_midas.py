@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-"""
-GPU-based depth estimation using MiDaS for comparison with NPU CVML version.
-"""
 
 import cv2
 import torch
