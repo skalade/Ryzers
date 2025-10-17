@@ -144,6 +144,7 @@ RUN apt-get update \
     ros-${ROS_DISTRO}-cv-bridge \
     ros-${ROS_DISTRO}-image-transport \
     ros-${ROS_DISTRO}-web-video-server \
+    ros-${ROS_DISTRO}-v4l2-camera \
  && rm -rf /var/lib/apt/lists/*
 
 
