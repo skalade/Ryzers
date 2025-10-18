@@ -20,7 +20,7 @@ RUN add-apt-repository ppa:deadsnakes/ppa && \
 # Clone Ryzen AI repo and lock onto 1.6 release
 RUN git clone https://github.com/amd/RyzenAI-SW
 RUN cd RyzenAI-SW && \
-    git checkout 42e90e6 &&
+    git checkout 42e90e6 && \
     git lfs install && \
     git lfs pull
 
