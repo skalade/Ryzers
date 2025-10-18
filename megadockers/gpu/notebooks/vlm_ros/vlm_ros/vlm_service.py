@@ -66,22 +66,31 @@ class VLMService(Node):
             self.get_logger().error(f'Error processing image: {str(e)}')
 
     def query_vlm(self, prompt, image_base64):
-        """Query llama.cpp server with image and prompt"""
+        """Query llama.cpp server with image and prompt using OpenAI API format"""
         payload = {
-            "prompt": prompt,
-            "image_data": [{"data": image_base64, "id": 1}],
-            "n_predict": 128
+            "model": "vlm",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
+                    ]
+                }
+            ],
+            "temperature": 0.2,
+            "max_tokens": 256
         }
 
         try:
             response = requests.post(
-                f'{self.llama_url}/completion',
+                f'{self.llama_url}/v1/chat/completions',
                 json=payload,
-                timeout=30
+                timeout=120
             )
             response.raise_for_status()
             result = response.json()
-            return result.get('content', 'No response')
+            return result["choices"][0]["message"]["content"]
         except Exception as e:
             self.get_logger().error(f'Error querying VLM: {str(e)}')
             return f'Error: {str(e)}'
