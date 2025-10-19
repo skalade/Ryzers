@@ -34,6 +34,10 @@ RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/samples && \
 RUN cd /ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/samples && \
 	curl -o video_call.mp4 https://videos.pexels.com/video-files/8136072/8136072-hd_1920_1080_25fps.mp4
 
+# Copy demo files
+COPY cvml_ros /ryzers/cvml_ros
+COPY demo_ros.sh /ryzers/
+
 # Cleanup
 ENV SHELL=/bin/bash
 
