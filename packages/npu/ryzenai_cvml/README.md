@@ -17,6 +17,39 @@ ryzers run
 
 The default test will run a sample depth perception app.
 
+## ROS 2 Demo
+
+To run the demo, follow these steps:
+
+### Step 1: Edit config.yaml 
+
+Make sure your `config.yaml` points to your USB webcam device.
+
+```yaml
+    # edit this line in config.yaml
+    - "--device=/dev/video0:/dev/video0"
+```
+
+### Step 2: Include ROS into the ryzer
+
+Run `ryzers build` with the ROS ryzer
+
+```
+ryzers build xdna ryzenai_cvml ros
+```
+
+### Step 3: Run demo
+
+```
+ryzers run /ryzers/demo_ros.sh
+```
+
+### Step 4: Visualize streams in your browser
+
+Go to your web browser and type in `0.0.0.0:8080`, this will bring up the ROS 2 `web_video_server` UI where you can click on different topics and visualize video streams. All CVML published topics should be visible.
+
+<img src="images/ros_demo.gif">
+
 ---
 
 For further details, refer to the official [Ryzen AI CVML documentation](https://github.com/amd/RyzenAI-SW/tree/main/Ryzen-AI-CVML-Library).
