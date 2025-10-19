@@ -23,7 +23,7 @@ To run the demo, follow these steps:
 
 ### Step 1: Edit config.yaml 
 
-Make sure your `config.yaml` points to your USB webcam device.
+Make sure your `config.yaml` points to your camera device e.g. `/dev/video0`.
 
 ```yaml
     # edit this line in config.yaml
@@ -46,7 +46,7 @@ ryzers run /ryzers/demo_ros.sh
 
 ### Step 4: Visualize streams in your browser
 
-Go to your web browser and type in `0.0.0.0:8080`, this will bring up the ROS 2 `web_video_server` UI where you can click on different topics and visualize video streams. All CVML published topics should be visible.
+Go to your web browser and type in `0.0.0.0:8080`, this will bring up the ROS 2 `web_video_server` UI where you can click on different topics and visualize video streams.
 
 <img src="images/ros_demo.gif">
 
