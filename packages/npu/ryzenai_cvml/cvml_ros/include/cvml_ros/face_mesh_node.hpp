@@ -1,3 +1,6 @@
+// Copyright (C) 2025 Advanced Micro Devices, Inc. All rights reserved.
+// SPDX-License-Identifier: MIT
+
 #ifndef RYZEN_AI_CVML__FACE_MESH_NODE_HPP_
 #define RYZEN_AI_CVML__FACE_MESH_NODE_HPP_
 

@@ -1,3 +1,6 @@
+// Copyright (C) 2025 Advanced Micro Devices, Inc. All rights reserved.
+// SPDX-License-Identifier: MIT
+
 #include "cvml_ros/face_detection_node.hpp"
 #include <opencv2/opencv.hpp>
 #include <sstream>

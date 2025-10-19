@@ -1,3 +1,6 @@
+// Copyright (C) 2025 Advanced Micro Devices, Inc. All rights reserved.
+// SPDX-License-Identifier: MIT
+
 #include "rclcpp/rclcpp.hpp"
 #include "cvml_ros/depth_estimation_node.hpp"
 

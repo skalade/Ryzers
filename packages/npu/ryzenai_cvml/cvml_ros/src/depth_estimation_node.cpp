@@ -1,3 +1,6 @@
+// Copyright (C) 2025 Advanced Micro Devices, Inc. All rights reserved.
+// SPDX-License-Identifier: MIT
+
 #include "cvml_ros/depth_estimation_node.hpp"
 #include <opencv2/opencv.hpp>
 
@@ -38,11 +41,11 @@ DepthEstimationNode::DepthEstimationNode(const rclcpp::NodeOptions & options)
     throw;
   }
   
-  // Create regular ROS2 publisher (NOT image_transport)
+  // Create regular ROS2 publisher (getting weird weak_ptr issues with image_transport,
+  // will keep simple publishers subscribers for now)
   depth_pub_ = this->create_publisher<sensor_msgs::msg::Image>(output_topic_, 10);
   RCLCPP_INFO(this->get_logger(), "Created publisher on: %s", output_topic_.c_str());
   
-  // Create regular ROS2 subscriber (NOT image_transport)
   image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
     input_topic_, 10,
     std::bind(&DepthEstimationNode::imageCallback, this, std::placeholders::_1));

@@ -27,7 +27,7 @@ include_directories(${cv_bridge_INCLUDE_DIRS})
 
 # Create depth estimation executable
 add_executable(depth_estimation_node
-  src/main.cpp
+  src/depth_estimation_main.cpp
   src/depth_estimation_node.cpp
 )
 
