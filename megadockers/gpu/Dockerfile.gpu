@@ -155,3 +155,5 @@ COPY notebooks /ryzers/
 WORKDIR /ryzers/notebooks
 
 RUN chmod -R 777 /ryzers/notebooks
+
+RUN sudo pip install lerobot
