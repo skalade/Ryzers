@@ -73,7 +73,7 @@ For detailed build and run instructions, refer to the included documentation.
 | Robotics                | [`ROS 2`](packages/ros/ros), [`Gazebo`](packages/ros/gazebo), [`LeRobot`](packages/robotics/lerobot). [`ACT`](packages/robotics/act)    |
 | Simulation                |  [`Genesis`](packages/robotics/genesis)  |
 | Vision                  | [`OpenCV`](packages/vision/opencv), [`SAM`](packages/vision/sam), [`MobileSAM`](packages/vision/mobilesam), [`ncnn`](packages/vision/ncnn) |
-| Ryzen AI NPU                |  [`XDNA`](packages/npu/xdna), [`IRON`](packages/npu/iron), [`NPUEval`](packages/npu/npueval)  |
+| Ryzen AI NPU                |  [`XDNA`](packages/npu/xdna), [`IRON`](packages/npu/iron), [`NPUEval`](packages/npu/npueval), [`Ryzen AI CVML`](packages/npu/ryzenai_cvml)  |
 | Adaptive SoCs           | [`PYNQ.remote`](packages/adaptive-socs/pynq-remote) |
 | Utilities   | [`JupyterLab`](packages/ide/jupyterlab), [`amdgpu_top`](packages/init/amdgpu_top) |
 
