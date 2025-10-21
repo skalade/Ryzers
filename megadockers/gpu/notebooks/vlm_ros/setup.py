@@ -15,12 +15,12 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    description='ROS2 service node for Vision Language Model integration',
+    description='ROS2 node for Vision Language Model integration',
     license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'vlm_service = vlm_ros.vlm_service:main',
+            'vlm_node = vlm_ros.vlm_node:main',
         ],
     },
 )
