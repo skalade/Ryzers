@@ -24,8 +24,8 @@ if args.clear_cache:
         shutil.rmtree(triton_cache)
 
 # Disable torch.compile completely
-os.environ["TORCH_COMPILE_DISABLE"] = "1"
-os.environ["TORCHDYNAMO_DISABLE"] = "1"
+#os.environ["TORCH_COMPILE_DISABLE"] = "1"
+#os.environ["TORCHDYNAMO_DISABLE"] = "1"
 
 # Enable debugging only if requested
 if args.debug:
@@ -33,15 +33,6 @@ if args.debug:
     os.environ["AMD_LOG_LEVEL"] = "4"
     os.environ["ROCBLAS_LAYER"] = "3"
     print("Debug mode enabled")
-
-# Setup hipBLAS and hipBLASLt for autotuning
-try:
-    from hipblas_autotuning import setup_autotuning
-    setup_autotuning()
-except ImportError as e:
-    if args.debug:
-        print(f"⚠ Could not setup hipBLAS/hipBLASLt autotuning: {e}")
-        print("  Continuing with default PyTorch backend...")
 
 np.random.seed(42)
 
@@ -77,15 +68,40 @@ example = {
 print("\nRunning inference...")
 success = False
 try:
-    t0 = time.perf_counter()
-    out = policy.infer(example)
-    elapsed = time.perf_counter() - t0
+    # Warmup run
+    print("Warmup run...")
+    _ = policy.infer(example)
+    print("Warmup complete\n")
+    
+    # Timed runs
+    num_iterations = 100
+    latencies = []
+    
+    print(f"Running {num_iterations} iterations...")
+    for i in range(num_iterations):
+        t0 = time.perf_counter()
+        out = policy.infer(example)
+        elapsed = time.perf_counter() - t0
+        latencies.append(elapsed * 1000)  # Convert to ms
+        
+        if (i + 1) % 10 == 0:
+            print(f"  Progress: {i + 1}/{num_iterations}")
+    
+    # Calculate statistics
+    avg_latency = np.mean(latencies)
+    std_latency = np.std(latencies)
+    min_latency = np.min(latencies)
+    max_latency = np.max(latencies)
     
     print(f"\n✓ Inference succeeded!")
-    print(f"  Time: {elapsed*1000:.2f} ms")
+    print(f"  Iterations: {num_iterations}")
+    print(f"  Average latency: {avg_latency:.2f} ms")
+    print(f"  Std deviation: {std_latency:.2f} ms")
+    print(f"  Min latency: {min_latency:.2f} ms")
+    print(f"  Max latency: {max_latency:.2f} ms")
     print(f"  Actions shape: {out['actions'].shape}")
     if args.debug:
-        print(f"  Policy timing: {out['policy_timing']['infer_ms']:.2f} ms")
+        print(f"  Last policy timing: {out['policy_timing']['infer_ms']:.2f} ms")
     success = True
     
 except RuntimeError as e:
@@ -118,4 +134,5 @@ else:
     print("❌ TEST FAILED - See errors above")
     print("="*50)
     exit(1)
+
 
