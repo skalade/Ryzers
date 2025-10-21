@@ -52,17 +52,20 @@ RUN pip install uv
 # Setup openpi
 RUN git clone https://github.com/Physical-Intelligence/openpi && \
     cd openpi && \
+    git checkout 95aadc6b16d170e4b13ab2e0ac64fbf2d1bb8e31 && \
     git submodule update --init --recursive
 
 #COPY test.py /ryzers/test.py
 #COPY test.sh /ryzers/test.sh
 COPY hipblas_autotuning.py /ryzers/openpi/hipblas_autotuning.py
-COPY test_pi0_pytorch.py /ryzers/openpi/test_pi0_pytorch.py
+#COPY test_pi0_pytorch.py /ryzers/openpi/test_pi0_pytorch.py
+COPY test.py /ryzers/openpi/test.py
+COPY test.sh /ryzers/openpi/test.sh
 COPY openpi.patch /ryzers/openpi
 RUN cd openpi && \
     git apply ./openpi.patch
 
-#RUN chmod +x /ryzers/test.sh
+RUN chmod +x /ryzers/openpi/test.sh
 
 RUN echo "export LD_LIBRARY_PATH=/opt/rocm/lib:/opt/rocm-6.4.4/lib:$LD_LIBRARY_PATH" >> /root/.bashrc
 

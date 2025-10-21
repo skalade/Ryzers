@@ -6,8 +6,8 @@ This directory contains the docker configuration files to run [openpi from Physi
 
 ```sh
 ryzers build openai
-#ryzers run
-docker run -it --rm --shm-size 32G --privileged --cap-add=SYS_PTRACE  --network=host --ipc=host -e HSA_OVERRIDE_GFX_VERSION=11.0.0 --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined --group-add video -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix ryzerdocker 
+ryzers run
+#docker run -it --rm --shm-size 32G --privileged --cap-add=SYS_PTRACE  --network=host --ipc=host -e HSA_OVERRIDE_GFX_VERSION=11.0.0 --device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined --group-add video -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix ryzerdocker 
 ```
 
 ### Install openpi
@@ -36,7 +36,7 @@ uv run examples/convert_jax_model_to_pytorch.py \
 
 ### Run the openpi inference test
 ```sh
-uv run test_pi0_pytorch.py
+uv run test.py
 ```
 
 ### How to debug page fault on GPU
@@ -46,12 +46,12 @@ dmesg -wH | grep -i 'amdgpu\|gpu\|fault'
 ```
 Run python's unbuffered mode with uv, so that we can keep the log file.
 ```sh
-script -c "uv run python -u test_pi0_pytorch.py --debug" debug_test_pi0_pytorch.log
+script -c "uv run python -u test.py --debug" debug_test_pi0_pytorch.log
 ```
 
 If want to clear cache and debug, use
 ```sh
-uv run python -u test_pi0_pytorch.py --debug --clear-cache
+uv run python -u test.py --debug --clear-cache
 ```
 
 Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.

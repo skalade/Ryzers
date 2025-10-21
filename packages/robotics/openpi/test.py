@@ -32,7 +32,6 @@ if args.debug:
     os.environ["HSA_ENABLE_SDMA"] = "0"
     os.environ["AMD_LOG_LEVEL"] = "4"
     os.environ["ROCBLAS_LAYER"] = "3"
-    os.environ["HSA_CHECK_FLAT_SCRATCH"] = "1"
     print("Debug mode enabled")
 
 # Setup hipBLAS and hipBLASLt for autotuning
