@@ -68,6 +68,11 @@ RUN python3 -m pip install ollama
 
 EXPOSE 11434
 
+ENV HF_HOME=/ryzers/.cache/huggingface
+ENV LLAMA_CACHE=/ryzers/.cache/llamacpp
+ENV OLLAMA_MODELS=/ryzers/.cache/ollama
+
+RUN mkdir -p $HF_HOME $LLAMA_CACHE $OLLAMA_MODELS
 # Install deps
 RUN apt-get update && apt-get install -y git vim wget
 
@@ -80,8 +85,8 @@ RUN cd lerobot && \
 	pip install ".[smolvla]"
 
 # Cache lerobot dataset
-#RUN python3 -c "from lerobot.common.datasets.lerobot_dataset import LeRobotDataset; LeRobotDataset('lerobot/svla_so101_pickplace', video_backend='pyav')"
-#RUN python3 -c "from lerobot.common.policies.smolvla.modeling_smolvla import SmolVLAPolicy;"
+#RUN python3 -c "from lerobot.common.datasets.lerobot_dataset import LeRobotDataset; LeRobotDataset('lerobot/svla_so101_pickplace', video_backend='pyav');"
+RUN cd lerobot && HSA_OVERRIDE_GFX_VERSION=11.0.0 python3 -c "from lerobot.common.policies.smolvla.modeling_smolvla import SmolVLAPolicy; policy = SmolVLAPolicy.from_pretrained('lerobot/smolvla_base', revision='3326b10')"
 
 # Install deps
 RUN apt-get update && apt-get install -y git \
@@ -90,11 +95,6 @@ RUN apt-get update && apt-get install -y git \
 	libegl1-mesa-dev \
 	libgles2-mesa-dev
 
-ENV HF_HOME=/ryzers/.cache/huggingface
-ENV LLAMA_CACHE=/ryzers/.cache/llamacpp
-ENV OLLAMA_MODELS=/ryzers/.cache/ollama
-
-RUN mkdir -p $HF_HOME $LLAMA_CACHE $OLLAMA_MODELS
 
 # Cache llamacpp model
 RUN /ryzers/llamacpp/build/bin/llama-cli --hf-repo ggml-org/SmolVLM-500M-Instruct-GGUF --hf-file SmolVLM-500M-Instruct-Q8_0.gguf -n 1  || true
