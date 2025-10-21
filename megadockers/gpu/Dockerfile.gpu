@@ -85,7 +85,7 @@ RUN cd lerobot && \
 	pip install ".[smolvla]"
 
 # Cache lerobot dataset
-#RUN python3 -c "from lerobot.common.datasets.lerobot_dataset import LeRobotDataset; LeRobotDataset('lerobot/svla_so101_pickplace', video_backend='pyav');"
+RUN cd lerobot && HSA_OVERRIDE_GFX_VERSION=11.0.0 python3 -c "from lerobot.common.datasets.lerobot_dataset import LeRobotDataset; LeRobotDataset('lerobot/svla_so101_pickplace', video_backend='pyav');"
 RUN cd lerobot && HSA_OVERRIDE_GFX_VERSION=11.0.0 python3 -c "from lerobot.common.policies.smolvla.modeling_smolvla import SmolVLAPolicy; policy = SmolVLAPolicy.from_pretrained('lerobot/smolvla_base', revision='3326b10')"
 
 # Install deps
@@ -156,5 +156,6 @@ COPY notebooks /ryzers/
 WORKDIR /ryzers/notebooks
 
 RUN chmod -R 777 /ryzers/notebooks
+RUN chmod -R 777 /ryzers/.cache
 
 RUN pip install jupyterlab "numpy<2" matplotlib "datasets<3.0"
