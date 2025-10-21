@@ -152,9 +152,18 @@ RUN chmod +x test_llamacpp.sh
 RUN chmod +x test_smolvla.sh
 
 COPY notebooks /ryzers/
+
 WORKDIR /ryzers/notebooks
 
 RUN chmod -R 777 /ryzers/notebooks
 RUN chmod -R 777 /ryzers/.cache
 
-RUN pip install jupyterlab "numpy<2" matplotlib
+RUN pip install jupyterlab "numpy<2" matplotlib catkin_pkg empy
+
+SHELL ["/bin/bash", "-lc"]
+
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    colcon build --merge-install \
+    --base-paths /ryzers/notebooks/vlm_ros \
+    --build-base /ryzers/notebooks/vlm_ros/build \
+    --install-base /ryzers/notebooks/vlm_ros/install

@@ -13,7 +13,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'requests'],
     zip_safe=True,
     description='ROS2 node for Vision Language Model integration',
     license='MIT',

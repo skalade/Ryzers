@@ -2,22 +2,17 @@ docker run -it --rm \
   --shm-size 16G \
   --cap-add=SYS_PTRACE \
   --security-opt seccomp=unconfined \
-  --ulimit memlock=-1 \
   --network=host \
   --ipc=host \
-  -p 8888:8888 \
-  -p 11311:11311 \
-  -e HSA_OVERRIDE_GFX_VERSION=11.0.0 \
-  -e OPENAI_API_KEY=your_api_key_here \
-  -e RYZEN_AI_DIR=/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library \
-  -e LD_LIBRARY_PATH=/ryzers/RyzenAI-SW/Ryzen-AI-CVML-Library/linux:/opt/xilinx/xrt/lib \
+  -p 11434:11434 \
+  -e AMDGPUTOP_TIMEOUT=10s \
   -e DISPLAY=$DISPLAY \
-  -v $PWD/mounted:/ryzers/results \
+  -v $PWD/llamacpp_cache:/root/.cache \
+  -v $PWD/workspace/.ollama:/root/.ollama/ \
   -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v $PWD/notebooks:/ryzers/notebooks \
   --device=/dev/kfd \
   --device=/dev/dri \
-  --device=/dev/accel/accel0 \
   --group-add video \
   --group-add render \
-  roscon_npu
+  roscon_gpu
