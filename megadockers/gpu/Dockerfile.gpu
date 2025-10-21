@@ -22,6 +22,7 @@ ENV AMDGPUTOP_TIMEOUT=10s
 ENV MUJOCO_GL=egl
 
 
+
 RUN wget https://github.com/Umio-Yasuno/amdgpu_top/releases/download/v0.11.0/amdgpu-top_0.11.0-1_amd64.deb \
     -O amdgpu-top.deb
 RUN dpkg --install amdgpu-top.deb
@@ -84,6 +85,15 @@ RUN apt-get update && apt-get install -y git \
 	wget \
 	libegl1-mesa-dev \
 	libgles2-mesa-dev
+
+ENV HF_HOME=/ryzers/.cache/huggingface
+ENV LLAMA_CACHE=/ryzers/.cache/llamacpp
+ENV OLLAMA_MODELS=/ryzers/.cache/ollama
+
+RUN mkdir -p $HF_HOME $LLAMA_CACHE $OLLAMA_MODELS
+
+# Cache llamacpp model
+RUN /ryzers/llamacpp/build/bin/llama-cli --hf-repo ggml-org/SmolVLM-500M-Instruct-GGUF --hf-file SmolVLM-500M-Instruct-Q8_0.gguf -n 1  || true
 
 # Install ROS2 
 # Allow build-time argument for ROS distro (jazzy or kilted)
