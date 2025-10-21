@@ -21,8 +21,6 @@ RUN apt-get update && \
 ENV AMDGPUTOP_TIMEOUT=10s
 ENV MUJOCO_GL=egl
 
-
-
 RUN wget https://github.com/Umio-Yasuno/amdgpu_top/releases/download/v0.11.0/amdgpu-top_0.11.0-1_amd64.deb \
     -O amdgpu-top.deb
 RUN dpkg --install amdgpu-top.deb
@@ -84,10 +82,6 @@ RUN git clone https://github.com/huggingface/lerobot.git && \
 RUN cd lerobot && \
 	pip install ".[smolvla]"
 
-# Cache lerobot dataset
-RUN cd lerobot && HSA_OVERRIDE_GFX_VERSION=11.0.0 python3 -c "from lerobot.common.datasets.lerobot_dataset import LeRobotDataset; LeRobotDataset('lerobot/svla_so101_pickplace', video_backend='pyav');"
-RUN cd lerobot && HSA_OVERRIDE_GFX_VERSION=11.0.0 python3 -c "from lerobot.common.policies.smolvla.modeling_smolvla import SmolVLAPolicy; policy = SmolVLAPolicy.from_pretrained('lerobot/smolvla_base', revision='3326b10')"
-
 # Install deps
 RUN apt-get update && apt-get install -y git \
 	vim \
@@ -95,6 +89,9 @@ RUN apt-get update && apt-get install -y git \
 	libegl1-mesa-dev \
 	libgles2-mesa-dev
 
+# Cache lerobot dataset
+RUN cd lerobot && python3 -c "from lerobot.common.datasets.lerobot_dataset import LeRobotDataset; LeRobotDataset('lerobot/svla_so101_pickplace', video_backend='pyav');"
+RUN cd lerobot && HSA_OVERRIDE_GFX_VERSION=11.0.0 python3 -c "from lerobot.common.policies.smolvla.modeling_smolvla import SmolVLAPolicy; policy = SmolVLAPolicy.from_pretrained('lerobot/smolvla_base', revision='3326b10')"
 
 # Cache llamacpp model
 RUN /ryzers/llamacpp/build/bin/llama-cli --hf-repo ggml-org/SmolVLM-500M-Instruct-GGUF --hf-file SmolVLM-500M-Instruct-Q8_0.gguf -n 1  || true
@@ -140,6 +137,7 @@ RUN apt-get update && apt-get install -y ros-dev-tools \
 # 6. Source ROS environment
 SHELL ["/bin/bash", "-c"]
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc
+
 
 COPY test_act.sh .
 COPY test_amdgputop.sh .
