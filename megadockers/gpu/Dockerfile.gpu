@@ -96,6 +96,8 @@ RUN cd lerobot && HSA_OVERRIDE_GFX_VERSION=11.0.0 python3 -c "from lerobot.commo
 
 # Cache llamacpp model
 RUN /ryzers/llamacpp/build/bin/llama-cli --hf-repo ggml-org/SmolVLM-500M-Instruct-GGUF --hf-file SmolVLM-500M-Instruct-Q8_0.gguf -n 1  || true
+RUN /ryzers/llamacpp/build/bin/llama-cli --hf-repo unsloth_Qwen3-1.7B-GGUF --hf-file Qwen3-1.7B-Q8_0.gguf -n 1 || true
+RUN /ryzers/llamacpp/build/bin/llama-cli --hf-repo hugging-quants_Llama-3.2-1B-Instruct-Q8_0-GGUF --hf-file llama-3.2-1b-instruct-q8_0.gguf -n 1  || true
 
 # Install ROS2 
 # Allow build-time argument for ROS distro (jazzy or kilted)
