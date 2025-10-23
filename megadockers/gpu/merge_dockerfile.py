@@ -71,6 +71,7 @@ RUN echo '#!/bin/bash' > /entrypoint.sh && \\
     echo 'export SHELL=/bin/bash' >> /entrypoint.sh && \\
     echo 'export HSA_OVERRIDE_GFX_VERSION=11.0.0' >> /entrypoint.sh && \\
     echo 'source /opt/ros/kilted/setup.bash' >> /entrypoint.sh && \\
+    echo 'source /ryzers/notebooks/vlm_ros/install/setup.bash' >> /entrypoint.sh && \\
     echo 'exec python3 -m jupyterhub.singleuser --ip=0.0.0.0 --port=8888 --allow-root "$@"' >> /entrypoint.sh && \\
     chmod +x /entrypoint.sh
 """
