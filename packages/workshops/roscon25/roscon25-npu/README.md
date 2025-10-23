@@ -9,6 +9,9 @@ ryzers build xdna ryzenai_cvml ros roscon25-npu
 ryzers run
 ```
 
-A jupyter lab server will automatically spawn, copy the url and proceed to the notebooks.
+### References
+
+- https://github.com/amd/xdna-driver
+- https://ryzenai.docs.amd.com/en/latest/ryzen_ai_libraries.html
 
 Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.

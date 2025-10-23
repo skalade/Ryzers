@@ -9,6 +9,10 @@ ryzers build llamacpp ros smolvla amdgpu_top roscon25-gpu
 ryzers run
 ```
 
-A jupyter lab server will automatically spawn, copy the url and proceed to the notebooks.
+### References
+
+- https://github.com/ggml-org/llama.cpp
+- https://docs.ros.org/en/kilted/index.html
+- https://huggingface.co/blog/smolvla
 
 Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.
