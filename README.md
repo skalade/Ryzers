@@ -84,13 +84,9 @@ $${\color{orange}\small{\texttt{Help Wanted}}}$$
 
 ---
 
-## Highlighted Packages
-
-TBD
-
 ## Contributing
 
-We welcome contributions to Ryzers! If you have ideas for new features, bug fixes, or improvements, please submit a pull request or open an issue.  The format of a Ryzer package can be quickly learned from existing packages and Co-Pilots and Chatbots are quite good at vibe-coding new packages.  For detailed guidelines, see CONTRIBUTING.md.
+We welcome contributions to Ryzers! If you have ideas for new features, bug fixes, or improvements, please submit a pull request or open an issue.  The format of a Ryzer package can be quickly learned from existing packages and Co-Pilots and Chatbots are quite good at vibe-coding new packages.  For detailed guidelines, see [CONTRIBUTING.md](docs/contributing.md).
 
 ---
 
