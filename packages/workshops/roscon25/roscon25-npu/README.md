@@ -2,6 +2,10 @@
 
 This package contains the hands-on material from the workshop "Introducing AI PCs for Embodied AI" presented at [ROSCon 2025 Singapore](https://roscon.ros.org/2025/).
 
+### Prerequisites
+
+**Note: this package requires the XDNA driver to be installed on your host system.** Read the instructions on the [XDNA ryzer documentation](../../../npu/xdna) for installation help.
+
 ### Build and run the Docker Image
 
 ```sh
