@@ -15,7 +15,8 @@ model.vlm = model.vlm.to(torch.bfloat16)
 
 model.to('cuda:0').eval()
 
-image: Image.Image = "/ryzers/data/toucan.jpg"
+image_path = "/ryzers/data/toucan.jpg"
+image = Image.open(image_path).convert("RGB")
 prompt = "move sponge near apple"               # input your prompt
 
 # Predict Action (7-DoF; un-normalize for RT-1 google robot data, i.e., fractal20220817_data)
@@ -27,3 +28,5 @@ actions, _ = model.predict_action(
             use_ddim = True,                    # use DDIM sampling
             num_ddim_steps = 10,                # number of steps for DDIM sampling
         )
+
+print(actions)
