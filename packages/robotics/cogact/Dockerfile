@@ -13,15 +13,13 @@ RUN apt-get update && apt-get install -y git vim wget
 # we patch and install separately to preserve rocm-native install
 RUN git clone https://github.com/openvla/openvla && \
     cd openvla && \
-    sed -i 's|, "torchvision[^"]*"||g' pyproject.toml && \
-    sed -i 's|, "torch[^"]*"||g' pyproject.toml && \
+    sed -i -E '/^\s*dependencies\s*=\s*\[/,/^\s*\]/{ /^\s*"(torch|torchvision|torchaudio)[^"]*",?\s*(#.*)?$/d }' pyproject.toml && \
     pip install -e .
 
 # Installed patched CogACT
 RUN git clone https://github.com/microsoft/CogACT && \
     cd CogACT && \
-    sed -i 's|, "torchvision[^"]*"||g' pyproject.toml && \
-    sed -i 's|, "torch[^"]*"||g' pyproject.toml && \
+    sed -i -E '/^\s*dependencies\s*=\s*\[/,/^\s*\]/{ /^\s*"(torch|torchvision|torchaudio)[^"]*",?\s*(#.*)?$/d }' pyproject.toml && \
     pip install -e .
 
 # Download test image
