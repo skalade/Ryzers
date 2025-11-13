@@ -20,6 +20,7 @@ RUN git clone https://github.com/openvla/openvla && \
 RUN git clone https://github.com/microsoft/CogACT && \
     cd CogACT && \
     sed -i -E '/^\s*dependencies\s*=\s*\[/,/^\s*\]/{ /^\s*"(torch|torchvision|torchaudio)[^"]*",?\s*(#.*)?$/d }' pyproject.toml && \
+    sed -i -E 's/"openvla @[^"]*"/"openvla"/' pyproject.toml && \
     pip install -e .
 
 # Download test image
