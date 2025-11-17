@@ -19,7 +19,7 @@ RUN git clone https://github.com/huggingface/lerobot.git \
  && sed -i '/"torchvision[>=<~ ]*/d' pyproject.toml \ 
  && pip install -e ".[aloha,pusht,dynamixel,feetech,pi]"
 
-RUN pip install --no-cache-dir "numpy<2" pytest transformers huggingface_hub
+RUN pip install --no-cache-dir "numpy<2" pytest transformers huggingface_hub num2words
 
 COPY test.sh /ryzers/test_lerobot.sh
 RUN chmod +x /ryzers/test_lerobot.sh
