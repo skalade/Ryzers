@@ -15,8 +15,8 @@ volume_mappings:
 - "$PWD/packages/robotics/lerobot/mounted:/ryzers/mounted"
 
 # TODO: change to your robot and video device locations:
-docker_extra_run_flags:
-    - "--device=/dev/ttyACM_leader:/dev/ttyACM_leader"
-    - "--device=/dev/ttyACM_follower:/dev/ttyACM_follower"
-    - "--device=/dev/webcam_top:/dev/webcam_top"
-    - "--device=/dev/webcam_front:/dev/webcam_front"
+#docker_extra_run_flags:
+#    - "--device=/dev/ttyACM_leader:/dev/ttyACM_leader"
+#    - "--device=/dev/ttyACM_follower:/dev/ttyACM_follower"
+#    - "--device=/dev/webcam_top:/dev/webcam_top"
+#    - "--device=/dev/webcam_front:/dev/webcam_front"
