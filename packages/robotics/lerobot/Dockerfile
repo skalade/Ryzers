@@ -19,7 +19,15 @@ RUN git clone https://github.com/huggingface/lerobot.git \
  && sed -i '/"torchvision[>=<~ ]*/d' pyproject.toml \ 
  && pip install -e ".[aloha,pusht,dynamixel,feetech,pi]"
 
-RUN pip install --no-cache-dir "numpy<2" pytest transformers huggingface_hub num2words
+RUN pip install --no-cache-dir "numpy<2" pytest "transformers==4.57.1" huggingface_hub num2words peft
+
+# Install flash attention - required by policies like GR00T
+ENV FLASH_ATTENTION_TRITON_AMD_ENABLE="TRUE" 
+ENV BUILD_TYPE="rocm"
+RUN git clone --recursive https://github.com/ROCm/flash-attention && \
+    cd flash-attention && \
+    git checkout main_perf && \
+    python setup.py install
 
 COPY test.sh /ryzers/test_lerobot.sh
 RUN chmod +x /ryzers/test_lerobot.sh
