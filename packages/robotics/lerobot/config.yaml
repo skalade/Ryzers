@@ -6,7 +6,7 @@ build_arguments:
                           # https://pypi.org/project/mujoco/2.3.7/#files
 
 environment_variables: #TODO: Update with your own HF token
-- "HF_TOKEN=your_token_here" 
+  #- "HF_TOKEN=your_token_here" 
 - "HSA_OVERRIDE_GFX_VERSION=11.0.0"
 
 # Make sure calibration is persistent and models are available after ryzer exit
