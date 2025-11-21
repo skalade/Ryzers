@@ -4,5 +4,9 @@
 
 set -e
 
-# Run Test 
-python3 /ryzers/lerobot/examples/2_evaluate_pretrained_policy.py
+# Patch test training script to run quickly
+sed -i 's/training_steps = 5000/training_steps = 2/' /ryzers/lerobot/examples/training/train_policy.py
+sed -i 's/batch_size=64/batch_size=4/' /ryzers/lerobot/examples/training/train_policy.py
+
+# Run Test
+python /ryzers/lerobot/examples/training/train_policy.py
