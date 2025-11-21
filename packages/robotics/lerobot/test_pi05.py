@@ -1,8 +1,5 @@
 # Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-#
-# Test script for LeRobot Pi0.5 model
-# Based on the structure of test.py for SmolVLA
 
 import torch
 import time

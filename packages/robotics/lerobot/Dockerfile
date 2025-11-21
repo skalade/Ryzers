@@ -19,7 +19,7 @@ RUN git clone https://github.com/huggingface/lerobot.git \
  && sed -i '/"torchvision[>=<~ ]*/d' pyproject.toml \ 
  && pip install -e ".[aloha,pusht,dynamixel,feetech,pi]"
 
-RUN pip install --no-cache-dir "numpy<2" pytest "transformers==4.57.1" huggingface_hub num2words peft
+RUN pip install --no-cache-dir "numpy<2" pytest "transformers==4.53.3" huggingface_hub num2words "peft==0.18.0"
 
 # Install flash attention - required by policies like GR00T
 ENV FLASH_ATTENTION_TRITON_AMD_ENABLE="TRUE" 
@@ -31,6 +31,9 @@ RUN git clone --recursive https://github.com/ROCm/flash-attention && \
 
 COPY test.sh /ryzers/test_lerobot.sh
 RUN chmod +x /ryzers/test_lerobot.sh
+
+# Copy VLA test scripts
+COPY test_*.py .
 
 # Create an entrypoint to autmatically login to Hugging Face on docker start
 RUN echo -e '#!/bin/bash\n\

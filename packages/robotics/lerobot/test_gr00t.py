@@ -1,8 +1,5 @@
 # Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
-#
-# Test script for LeRobot GR00T model
-# Based on the structure of test.py for SmolVLA
 
 import torch
 import time
@@ -154,6 +151,3 @@ with torch.no_grad():
     print(f"Action shape: {action.shape}")
     print(f"Action (first 5 dims): {action[0, :5]}")
 
-print("\n=== Test Complete ===")
-print("Note: GR00T uses Eagle2-HG backbone (vision-language model)")
-print("      with a flow-matching action head for diffusion-based action prediction")
