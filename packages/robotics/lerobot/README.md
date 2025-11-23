@@ -79,7 +79,7 @@ ryzers run bash
 
 ### 4. Collecting dataset
 
-For this example we use the [koch v1.1](https://github.com/jess-moss/koch-v1-1) leader and follower arms, however you can easily swap them with different ones by changing the `robot.type` and `teleop.type` parameters.
+For this example we use the [SO-101](https://huggingface.co/docs/lerobot/en/so101) leader and follower arms, however you can easily swap them with different ones by changing the `robot.type` and `teleop.type` parameters.
 
 #### Teleoperation (optional)
 
@@ -87,10 +87,10 @@ Before starting any data collection tasks you can make sure your setup works by 
 
 ```bash
 lerobot-teleoperate \
-    --robot.type=koch_follower \
+    --robot.type=so101_follower \
     --robot.port=/dev/ttyACM_follower \
     --robot.id=my_awesome_follower_arm \
-    --teleop.type=koch_leader \
+    --teleop.type=so101_leader \
     --teleop.port=/dev/ttyACM_leader \
     --teleop.id=my_awesome_leader_arm \
     --fps=20 \
@@ -104,10 +104,10 @@ Make sure to set `robot.cameras` with the resolution and index according to your
 
 ```bash
 lerobot-record \
-    --robot.type=koch_follower \
+    --robot.type=so101_follower \
     --robot.port=/dev/ttyACM_follower \
     --robot.id=my_awesome_follower_arm \
-    --teleop.type=koch_leader \
+    --teleop.type=so101_leader \
     --teleop.port=/dev/ttyACM_leader \
     --teleop.id=my_awesome_leader_arm \
     --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 20}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 20}}" \
@@ -141,7 +141,7 @@ To deploy the model we re-use the `lerobot-record` command with a `policy.path` 
 
 ```bash
 lerobot-record \
-    --robot.type=koch_follower \
+    --robot.type=so101_follower \
     --robot.port=/dev/ttyACM_follower \
     --robot.id=my_awesome_follower_arm \
     --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 20}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 20}}" \
@@ -154,8 +154,8 @@ lerobot-record \
 
 If there's a big difference between movemetns of the leader and follower you can re-run calibration:
 ```bash
-lerobot-calibrate  --teleop.type=koch_leader     --teleop.port=/dev/ttyACM_leader     --teleop.id=my_awesome_leader_arm
-lerobot-calibrate  --robot.type=koch_follower    --robot.port=/dev/ttyACM_follower    --robot.id=my_awesome_follower_arm
+lerobot-calibrate  --teleop.type=so101_leader     --teleop.port=/dev/ttyACM_leader     --teleop.id=my_awesome_leader_arm
+lerobot-calibrate  --robot.type=so101_follower    --robot.port=/dev/ttyACM_follower    --robot.id=my_awesome_follower_arm
 ```
 
 If you run into motor bus timeout issues, you may need to increase the number of communication retries, here's a oneliner to make that change from an interactive session:
