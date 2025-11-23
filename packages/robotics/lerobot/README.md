@@ -142,7 +142,7 @@ lerobot-train \
     --dataset.repo_id=${HF_USER}/cube_test_dataset \
     --policy.type=act \
     --output_dir=/ryzers/mounted/outputs/train/place_cube_act \
-    --job_name=push_cube_act \
+    --job_name=place_cube \
     --policy.device=cuda \
     --policy.repo_id=${HF_USER}/place_cube_act \
     --steps=20000 \
@@ -159,9 +159,9 @@ lerobot-record \
     --robot.port=/dev/ttyACM_follower \
     --robot.id=my_awesome_follower_arm \
     --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 20}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 20}}" \
-    --dataset.repo_id=${HF_USER}/eval_push_cube \
+    --dataset.repo_id=${HF_USER}/eval_place_cube_act \
     --dataset.single_task="keep cube in square" \
-    --policy.path=/ryzers/mounted/outputs/train/push_cube_act2/checkpoints/last/pretrained_model/ \
+    --policy.path=/ryzers/mounted/outputs/train/place_cube_act/checkpoints/last/pretrained_model/ \
     --dataset.push_to_hub=False
 ```
 
