@@ -128,7 +128,7 @@ lerobot-record \
     --play_sound=False
 ```
 
-### 5. Train a policy
+### 4. Train a policy
 
 Using the collected dataset you can use it to train a policy like [ACT](https://github.com/tonyzhaozh/act) or [pi0](https://www.physicalintelligence.company/blog/pi0). Depending on your dataset size you should be able to train a small policy like ACT within a couple hours on the Strix Halo iGPU. Adjust training parameters as required for your policy and dataset.
 
@@ -144,7 +144,7 @@ lerobot-train \
     --save_freq=2000
 ```
 
-### 6. Run inference
+### 5. Run inference
 
 To deploy the model we re-use the `lerobot-record` command omitting training settings and with a `policy.path` parameter set. **Note:** the `dataset.repo_id` parameter should start with the word `eval`.
 
