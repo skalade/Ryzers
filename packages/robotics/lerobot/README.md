@@ -139,6 +139,15 @@ lerobot-record \
     --play_sound=False
 ```
 
+You can later visualize individual episodes in your collected dataset using `lerobot-dataset-viz`. You can do this with local cached dataset - no need to upload anything online.
+```bash
+lerobot-dataset-viz \
+    --repo-id=${HF_USER}/cube_test_dataset \
+    --episode-index=0
+```
+
+<video src="https://github.com/amdresearch/ryzers/releases/download/v0.1/demo.mp4" controls width="600"></video>
+
 ### 4. Train a policy
 
 Using the collected dataset you can use it to train a policy like [ACT](https://github.com/tonyzhaozh/act) or [pi0](https://www.physicalintelligence.company/blog/pi0). Depending on your dataset size you should be able to train a small policy like ACT within a couple hours on the Strix Halo iGPU. Adjust training parameters as required for your policy and dataset.
