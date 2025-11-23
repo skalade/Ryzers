@@ -27,6 +27,11 @@ Once you've updated your config make sure to rebuild the lerobot docker.
 ryzers build lerobot
 ```
 
+After initial setup, steps 3-5 should be run inside an interactive shell of the docker container:
+```
+ryzers run bash
+```
+
 ---
 
 ### 2. USB device mapping (optional)
