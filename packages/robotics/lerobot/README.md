@@ -55,13 +55,13 @@ Your serial and video devices may change indexes in `/dev` between sessions or w
    sudo vim /etc/udev/rules.d/99-usb-serial.rules
    ```
    
-   Fill in the following:
+   Add the following:
    ```ini
    SUBSYSTEM=="tty", ATTRS{serial}=="<leader-serial>",   SYMLINK+="ttyACM_leader"
    SUBSYSTEM=="tty", ATTRS{serial}=="<follower-serial>", SYMLINK+="ttyACM_follower"
    ```
    Replace `<leader-serial>` and `<follower-serial>` with the values from step 1.
-3. **Install & update devices**
+3. **Reload rules & trigger udev**
    ```bash
    sudo udevadm control --reload-rules
    sudo udevadm trigger
@@ -76,7 +76,7 @@ Your serial and video devices may change indexes in `/dev` between sessions or w
        udevadm info --query=all --name=$dev | grep -E "ID_VENDOR_ID|ID_MODEL_ID|ID_SERIAL|DEVPATH"
    done
    ```
-2. **Create or edit** `99-usb-video.rules` with your favorite editr.
+2. **Create or edit** `99-usb-video.rules` with your favorite editor.
    ```
    sudo vim /etc/udev/rules.d/99-usb-video.rules
    ```
@@ -111,7 +111,7 @@ lerobot-teleoperate \
     --teleop.type=so101_leader \
     --teleop.port=/dev/ttyACM_leader \
     --teleop.id=my_awesome_leader_arm \
-    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 30}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 30}}" \
+    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 30}, front: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 30}}" \
     --display_data=true
 ```
 
@@ -129,7 +129,7 @@ lerobot-record \
     --teleop.type=so101_leader \
     --teleop.port=/dev/ttyACM_leader \
     --teleop.id=my_awesome_leader_arm \
-    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 30}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 30}}" \
+    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 30}, front: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 30}}" \
     --dataset.repo_id=${HF_USER}/cube_test_dataset \
     --dataset.num_episodes=30 \
     --dataset.single_task="place green cube in mug" \
@@ -173,7 +173,7 @@ lerobot-record \
     --robot.type=so101_follower \
     --robot.port=/dev/ttyACM_follower \
     --robot.id=my_awesome_follower_arm \
-    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 30}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 30}}" \
+    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 30}, front: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 30}}" \
     --dataset.repo_id=${HF_USER}/eval_place_cube_act \
     --dataset.single_task="place green cube in mug" \
     --policy.path=/ryzers/mounted/outputs/train/place_cube_act/checkpoints/last/pretrained_model/ \
@@ -183,7 +183,11 @@ lerobot-record \
     --play_sound=False
 ```
 
+Observe your arm doing its tasks autonomously!
+
 <img src="images/evaluating_act_policy_so101.gif">
+
+Now you are well equipped to run the LeRobot stack on your Strix Halo machine. Try tackling different tasks, collect more data or explore other policies - have fun!
 
 ## Troubleshooting
 
