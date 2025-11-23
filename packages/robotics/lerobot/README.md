@@ -146,7 +146,7 @@ lerobot-dataset-viz \
     --episode-index=0
 ```
 
-<video src="https://github.com/amdresearch/ryzers/releases/download/v0.1/demo.mp4" controls width="600"></video>
+<video src="https://github.com/AMDResearch/Ryzers/releases/download/v0.1/lerobot_record_dataset_so101.mp4" controls width="600"></video>
 
 ### 4. Train a policy
 
