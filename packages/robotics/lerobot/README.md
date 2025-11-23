@@ -158,11 +158,14 @@ lerobot-record \
     --robot.type=so101_follower \
     --robot.port=/dev/ttyACM_follower \
     --robot.id=my_awesome_follower_arm \
-    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 20}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 20}}" \
+    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 30}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 30}}" \
     --dataset.repo_id=${HF_USER}/eval_place_cube_act \
-    --dataset.single_task="keep cube in square" \
+    --dataset.single_task="place green cube in mug" \
     --policy.path=/ryzers/mounted/outputs/train/place_cube_act/checkpoints/last/pretrained_model/ \
-    --dataset.push_to_hub=False
+    --dataset.num_episodes=1 \
+    --dataset.episode_time_s=20 \
+    --dataset.push_to_hub=False \
+    --play_sound=False
 ```
 
 ## Troubleshooting
