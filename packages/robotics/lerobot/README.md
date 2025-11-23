@@ -1,12 +1,31 @@
-## LeRobot Docker Setup
+# LeRobot
 
 Contains everything you need to build & run a ROCm-enabled LeRobot container.
+
+## Build & Run the Docker Container
+
+To verify the lerobot installation simply run the built ryzer -- this will run one of the lerobot training examples as a test.
+
+```bash
+ryzers build lerobot
+ryzers run
+```
+
+## Training and Controlling Robot Arms
+
+For this example we use the LeRobot [SO-101](https://huggingface.co/docs/lerobot/en/so101) leader and follower arms, however you can easily swap them with a different robot arm type in the following scripts.
 
 ### 1. Reference & Config
 - **Guide:** Hugging Face “Imitation Learning on Real-World Robots”  
   <https://huggingface.co/docs/lerobot/en/il_robots>  
 - **`config.yaml`:**  
-  - Pay attention to the TODO items - add your own `HF_TOKEN` from Hugging Face, and map your robot and video devices accordingly. Step 2. makes this simpler and more reproducible.
+  - Pay attention to the TODO items - add your own `HF_TOKEN` from Hugging Face, and map your robot and video devices accordingly. Step 2. makes this simpler and more reproducible, but is optional.
+
+Once you've updated your config make sure to rebuild the lerobot docker.
+
+```bash
+ryzers build lerobot
+```
 
 ---
 
@@ -20,7 +39,12 @@ Your serial and video devices may change indexes in `/dev` between sessions or w
    ```bash
    ls -l /dev/serial/by-id/
    ```
-2. **Create or edit** `99-usb-serial.rules`:
+2. **Create or edit** `99-usb-serial.rules` with your favorite editor:
+   ```
+   sudo vim /etc/udev/rules.d/99-usb-serial.rules
+   ```
+   
+   Fill in the following:
    ```ini
    SUBSYSTEM=="tty", ATTRS{serial}=="<leader-serial>",   SYMLINK+="ttyACM_leader"
    SUBSYSTEM=="tty", ATTRS{serial}=="<follower-serial>", SYMLINK+="ttyACM_follower"
@@ -28,62 +52,45 @@ Your serial and video devices may change indexes in `/dev` between sessions or w
    Replace `<leader-serial>` and `<follower-serial>` with the values from step 1.
 3. **Install & update devices**
    ```bash
-   sudo cp 99-usb-serial.rules /etc/udev/rules.d/
    sudo udevadm control --reload-rules
    sudo udevadm trigger
    ```
 
-#### USB-webcam mapping
+#### USB-video mapping
 
 1. **List webcam details**
-
-```bash
-for dev in /dev/video*; do
-    echo "=== $dev ==="
-    udevadm info --query=all --name=$dev | grep -E "ID_VENDOR_ID|ID_MODEL_ID|ID_SERIAL|DEVPATH"
-done
-```
-
-2. **Create or edit** `/etc/udev/rules.d/99-usb-video.rules`. You can use `ID_SERIAL_SHORT` from step 1. as the serial number.
-
-```ini
-KERNEL=="video[0-9]*", SUBSYSTEM=="video4linux", ATTRS{serial}==<webcam1-serial-short>, SYMLINK+="webcam_top"
-KERNEL=="video[0-9]*", SUBSYSTEM=="video4linux", ATTRS{serial}==<webcam2-serial-short>, SYMLINK+="webcam_front"
-```
-
+   ```bash
+   for dev in /dev/video*; do
+       echo "=== $dev ==="
+       udevadm info --query=all --name=$dev | grep -E "ID_VENDOR_ID|ID_MODEL_ID|ID_SERIAL|DEVPATH"
+   done
+   ```
+2. **Create or edit** `99-usb-video.rules` with your favorite editr.
+   ```
+   sudo vim /etc/udev/rules.d/99-usb-video.rules
+   ```
+   You can use `ID_SERIAL_SHORT` from step 1. as the serial number for each device. Give the symlink any name that's meaningful to you.
+   ```ini
+   KERNEL=="video[0-9]*", SUBSYSTEM=="video4linux", ATTRS{serial}=="<cam1-serial-short>", SYMLINK+="webcam_top"
+   KERNEL=="video[0-9]*", SUBSYSTEM=="video4linux", ATTRS{serial}=="<cam2-serial-short>", SYMLINK+="webcam_front"
+   ```
 3. **Install & update devices**
    ```bash
-   sudo cp 99-usb-video.rules /etc/udev/rules.d/99-usb-video.rules
    sudo udevadm control --reload-rules
    sudo udevadm trigger
    ```
 
-Your cameras, model files, and USB-serial ports will now mount exactly as specified. The ports will be available as `/dev/ttyACM_leader` and `/dev/ttyACM_follower`.
+Your USB serial ports and cameras should mount exactly as specified. E.g. the robot and teleop ports will be available as `/dev/ttyACM_leader` and `/dev/ttyACM_follower`.
 
 ---
 
-### 3. Build & Run
+### 3. Collecting dataset
 
-To verify the lerobot installation simply run the built ryzer -- this will run one of the lerobot examples as a test.
-```bash
-ryzers build lerobot
-ryzers run
-```
-
-To run an interactive session start with bash:
-```bash
-ryzers run bash
-```
-
----
-
-### 4. Collecting dataset
-
-For this example we use the [SO-101](https://huggingface.co/docs/lerobot/en/so101) leader and follower arms, however you can easily swap them with different ones by changing the `robot.type` and `teleop.type` parameters.
+In order to train the policy we will need data for our specific embodiment. We use an SO-101 setup with two C270 USB webcams, however you can use more or less cameras.
 
 #### Teleoperation (optional)
 
-Before starting any data collection tasks you can make sure your setup works by running teleoperation.
+Before starting any data collection tasks you can make sure your setup works by running `lerobot-teleoperate`. We will re-use a lot of these parameters in `lerobot-record`.
 
 ```bash
 lerobot-teleoperate \
@@ -93,14 +100,15 @@ lerobot-teleoperate \
     --teleop.type=so101_leader \
     --teleop.port=/dev/ttyACM_leader \
     --teleop.id=my_awesome_leader_arm \
-    --fps=20 \
-    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 20}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 20}}" \
+    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 30}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 30}}" \
     --display_data=true
 ```
 
 #### Record a dataset
 
-Make sure to set `robot.cameras` with the resolution and index according to your setup. Adjust dataset parameters like number of episodes or durations as needed for your task.
+We record 30 episodes of manually placing a green cube into a mug. Make sure to set `robot.cameras` with the resolution and index according to your setup. Adjust dataset parameters like number of episodes or durations as needed for your task.
+
+Set `dataset.push_to_hub=True` if you want to upload the dataset online to your HuggingFace hub.
 
 ```bash
 lerobot-record \
@@ -110,34 +118,35 @@ lerobot-record \
     --teleop.type=so101_leader \
     --teleop.port=/dev/ttyACM_leader \
     --teleop.id=my_awesome_leader_arm \
-    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 20}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 20}}" \
-    --play_sound=False \
-    --dataset.repo_id=${HF_USER}/push_cube \
+    --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 30}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 30}}" \
+    --dataset.repo_id=${HF_USER}/cube_test_dataset \
     --dataset.num_episodes=30 \
-    --dataset.single_task="keep cube in square" \
+    --dataset.single_task="place green cube in mug" \
     --dataset.episode_time_s=10 \
     --dataset.reset_time_s=5 \
-    --dataset.push_to_hub=False
+    --dataset.push_to_hub=False \
+    --play_sound=False
 ```
 
 ### 5. Train a policy
 
-Using the collected dataset you can use it to train a policy like [ACT](https://github.com/tonyzhaozh/act) or [pi0](https://www.physicalintelligence.company/blog/pi0). Depending on your dataset size you should be able to train a small policy like ACT within an hour on a Strix Halo iGPU.
+Using the collected dataset you can use it to train a policy like [ACT](https://github.com/tonyzhaozh/act) or [pi0](https://www.physicalintelligence.company/blog/pi0). Depending on your dataset size you should be able to train a small policy like ACT within a couple hours on the Strix Halo iGPU. Adjust training parameters as required for your policy and dataset.
 
 ```bash
 lerobot-train \
-    --dataset.repo_id=${HF_USER}/push_cube \
+    --dataset.repo_id=${HF_USER}/cube_test_dataset \
     --policy.type=act \
-    --output_dir=/ryzers/mounted/outputs/train/push_cube_act \
+    --output_dir=/ryzers/mounted/outputs/train/place_cube_act \
     --job_name=push_cube_act \
     --policy.device=cuda \
-    --policy.repo_id=${HF_USER}/push_cube_act \
-    --steps=2000
+    --policy.repo_id=${HF_USER}/place_cube_act \
+    --steps=20000 \
+    --save_freq=2000
 ```
 
 ### 6. Run inference
 
-To deploy the model we re-use the `lerobot-record` command with a `policy.path` parameter set.
+To deploy the model we re-use the `lerobot-record` command omitting training settings and with a `policy.path` parameter set. **Note:** the `dataset.repo_id` parameter should start with the word `eval`.
 
 ```bash
 lerobot-record \
@@ -147,12 +156,13 @@ lerobot-record \
     --robot.cameras="{ top: {type: opencv, index_or_path: /dev/webcam_front, width: 640, height: 480, fps: 20}, front: {type: opencv, index_or_path: /dev/webcam_top, width: 640, height: 480, fps: 20}}" \
     --dataset.repo_id=${HF_USER}/eval_push_cube \
     --dataset.single_task="keep cube in square" \
-    --policy.path=/ryzers/mounted/outputs/train/push_cube_act2/checkpoints/last/pretrained_model/
+    --policy.path=/ryzers/mounted/outputs/train/push_cube_act2/checkpoints/last/pretrained_model/ \
+    --dataset.push_to_hub=False
 ```
 
 ## Troubleshooting
 
-If there's a big difference between movemetns of the leader and follower you can re-run calibration:
+If there's a big difference between movements of the leader and follower you can re-run calibration:
 ```bash
 lerobot-calibrate  --teleop.type=so101_leader     --teleop.port=/dev/ttyACM_leader     --teleop.id=my_awesome_leader_arm
 lerobot-calibrate  --robot.type=so101_follower    --robot.port=/dev/ttyACM_follower    --robot.id=my_awesome_follower_arm
