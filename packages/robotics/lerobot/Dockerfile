@@ -29,7 +29,7 @@ RUN echo -e '#!/bin/bash\n\
 if [ -n "$HF_TOKEN" ]; then\n\
   hf auth login --token "$HF_TOKEN" --add-to-git-credential\n\
 fi\n\
-export HF_USER=$(hf auth whoami | head -n1)\n\
+export HF_USER=$(hf auth whoami | head -n 1 | cut -d" " -f3)\n\
 echo "🚀 Logged in as $HF_USER"\n\
 exec "$@"' > /ryzers/entrypoint.sh && chmod +x /ryzers/entrypoint.sh
 
