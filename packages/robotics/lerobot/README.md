@@ -21,6 +21,12 @@ For this example we use the LeRobot [SO-101](https://huggingface.co/docs/lerobot
 - **`config.yaml`:**  
   - Pay attention to the TODO items - add your own `HF_TOKEN` from Hugging Face, and map your robot and video devices accordingly. Step 2. makes this simpler and more reproducible, but is optional.
 
+**Important:** you will likely need read/write permissions enabled for the serial devices before you start the docker.
+
+```bash
+sudo chmod 666 /dev/ttyACM*
+```
+
 Once you've updated your config make sure to rebuild the lerobot docker.
 
 ```bash
@@ -170,13 +176,26 @@ lerobot-record \
 
 ## Troubleshooting
 
+### Arms out of sync
+
 If there's a big difference between movements of the leader and follower you can re-run calibration:
 ```bash
 lerobot-calibrate  --teleop.type=so101_leader     --teleop.port=/dev/ttyACM_leader     --teleop.id=my_awesome_leader_arm
 lerobot-calibrate  --robot.type=so101_follower    --robot.port=/dev/ttyACM_follower    --robot.id=my_awesome_follower_arm
 ```
 
+### Timeouts
+
 If you run into motor bus timeout issues, you may need to increase the number of communication retries, here's a oneliner to make that change from an interactive session:
 ```bash
 find . -type f -name "*.py" -exec sed -i.bak 's/num_retry: int = 0/num_retry: int = 10/g' {} +
 ```
+
+### Camera issues
+
+If the 2nd camera doesn't connect and you see something like:
+```bash
+RuntimeError: OpenCVCamera(/dev/webcam_top) read failed (status=False).
+```
+
+It might be a USB controller bandwidth limitation - try connecting cameras to different usb controllers or reduce resolution/fps.
