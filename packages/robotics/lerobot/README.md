@@ -146,7 +146,7 @@ lerobot-dataset-viz \
     --episode-index=0
 ```
 
-<video src="https://github.com/AMDResearch/Ryzers/releases/download/v0.1/lerobot_record_dataset_so101.mp4" controls width="600"></video>
+<img src="images/lerobot_record_dataset_so101.gif">
 
 ### 4. Train a policy
 
@@ -182,6 +182,8 @@ lerobot-record \
     --dataset.push_to_hub=False \
     --play_sound=False
 ```
+
+<img src="images/evaluating_act_policy_so101.gif">
 
 ## Troubleshooting
 
