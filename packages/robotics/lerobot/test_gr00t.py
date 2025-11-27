@@ -100,7 +100,7 @@ dummy_batch = {
     "observation.state": torch.randn(batch_size, state_dim) * 0.1,  # Small random values
     # Task description
     "task": ["pick up the red block"],
-    # Action (needed for training, but we'll only use select_action for inference)
+    # Action (needed for training, but we'll only use predict_action_chunk for inference)
     "action": torch.randn(batch_size, config.chunk_size, action_dim) * 0.1,  # Small random values
 }
 
@@ -121,7 +121,7 @@ print("\nWarming up...")
 for i in range(3):
     print(f"  Warmup iteration {i+1}/3...")
     with torch.no_grad():
-        _ = policy.select_action(processed_batch)
+        _ = policy.predict_action_chunk(processed_batch)
 
 # Benchmark
 print("\nBenchmarking...")
@@ -132,7 +132,7 @@ for i in range(num_iterations):
     if (i + 1) % 10 == 0:
         print(f"  Iteration {i+1}/{num_iterations}")
     with torch.no_grad():
-        action = policy.select_action(processed_batch)
+        action = policy.predict_action_chunk(processed_batch)
 end = time.time()
 
 avg_inf = (end - start) / num_iterations
@@ -147,7 +147,7 @@ print(f"Max GPU memory used: {torch.cuda.max_memory_allocated() / 1024**2:.2f} M
 # Test action prediction
 print("\n=== Testing Action Prediction ===")
 with torch.no_grad():
-    action = policy.select_action(processed_batch)
+    action = policy.predict_action_chunk(processed_batch)
     print(f"Action shape: {action.shape}")
     print(f"Action (first 5 dims): {action[0, :5]}")
 

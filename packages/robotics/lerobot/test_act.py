@@ -144,7 +144,7 @@ for img_key in image_features:
 if has_state:
     dummy_batch["observation.state"] = torch.randn(batch_size, state_dim)
 
-# Add action (needed for training, but we'll only use select_action for inference)
+# Add action (needed for training, but we'll only use predict_action_chunk for inference)
 dummy_batch["action"] = torch.randn(batch_size, policy.config.chunk_size, action_dim)
 
 print(f"\nImage shape: {img_shape}")
@@ -165,7 +165,7 @@ print("Batch prepared successfully!")
 print("\nWarming up...")
 for _ in range(3):
     with torch.no_grad():
-        _ = policy.select_action(processed_batch)
+        _ = policy.predict_action_chunk(processed_batch)
 
 # Benchmark
 print("\nBenchmarking...")
@@ -174,7 +174,7 @@ start = time.time()
 num_iterations = 100
 for _ in range(num_iterations):
     with torch.no_grad():
-        action = policy.select_action(processed_batch)
+        action = policy.predict_action_chunk(processed_batch)
 end = time.time()
 
 avg_inf = (end - start) / num_iterations
@@ -190,7 +190,7 @@ print(f"Max GPU memory used: {torch.cuda.max_memory_allocated() / 1024**2:.2f} M
 # Test action prediction
 print("\n=== Testing Action Prediction ===")
 with torch.no_grad():
-    action = policy.select_action(processed_batch)
+    action = policy.predict_action_chunk(processed_batch)
     print(f"Action shape: {action.shape}")
     print(f"Action (first 5 dims): {action[0, :min(5, action_dim)]}")
 
