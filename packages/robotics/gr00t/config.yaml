@@ -2,5 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 environment_variables:
-- "HSA_OVERRIDE_GFX_VERSION=11.0.0"  # Required for HIP to write kernels
+- "HSA_OVERRIDE_GFX_VERSION=11.0.0"
 
+# Map huggingface cache so we don't need to re-download models
+volume_mappings:
+- "~/.cache/huggingface/:/root/.cache/huggingface/"
