@@ -65,7 +65,6 @@ avg_hz = policy.config.chunk_size / avg_latency_s
 print(f"\n{'='*60}")
 print("SmolVLA Results")
 print(f"{'='*60}")
-print(f"Model: lerobot/smolvla_base")
 print(f"Chunk size: {policy.config.chunk_size}")
 print(f"Iterations: {num_iterations}")
 print(f"Avg latency: {avg_latency_ms:.2f} ms ({avg_latency_s:.6f} s)")

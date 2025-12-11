@@ -64,7 +64,6 @@ avg_hz = action_horizon / avg_latency_s
 print(f"\n{'='*60}")
 print("PI0 Results")
 print(f"{'='*60}")
-print(f"Model: pi0_droid")
 print(f"Action horizon: {action_horizon}")
 print(f"Iterations: {num_iterations}")
 print(f"Avg latency: {avg_latency_ms:.2f} ms ({avg_latency_s:.6f} s)")

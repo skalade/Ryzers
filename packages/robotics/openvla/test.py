@@ -63,7 +63,6 @@ avg_hz = 1 / avg_latency_s
 print(f"\n{'='*60}")
 print("OpenVLA Results")
 print(f"{'='*60}")
-print(f"Model: openvla/openvla-7b")
 print(f"Action dimension: {action_dim}")
 print(f"Iterations: {num_iterations}")
 print(f"Avg latency: {avg_latency_ms:.2f} ms ({avg_latency_s:.6f} s)")
