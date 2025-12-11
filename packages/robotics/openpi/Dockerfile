@@ -55,15 +55,11 @@ RUN git clone https://github.com/Physical-Intelligence/openpi && \
     git checkout 95aadc6b16d170e4b13ab2e0ac64fbf2d1bb8e31 && \
     git submodule update --init --recursive
 
-COPY test.py /ryzers/openpi/test.py
-COPY test.sh /ryzers/test.sh
 COPY openpi.patch /ryzers/openpi
 RUN cd openpi && \
     git apply ./openpi.patch && \
     GIT_LFS_SKIP_SMUDGE=1 uv sync && \
     GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
-
-RUN chmod +x /ryzers/test.sh
 
 # Download model checkpoint
 RUN cd openpi && \
@@ -81,5 +77,9 @@ RUN cd openpi && \
     --output_path /root/.cache/openpi/openpi-assets/checkpoints/pi0_droid
 
 RUN echo "export LD_LIBRARY_PATH=/opt/rocm/lib:/opt/rocm-6.4.4/lib:$LD_LIBRARY_PATH" >> /root/.bashrc
+
+COPY test.py /ryzers/openpi/test.py
+COPY test.sh /ryzers/test.sh
+RUN chmod +x /ryzers/test.sh
 
 CMD ["/bin/bash", "-c", "/ryzers/test.sh"]
