@@ -7,14 +7,6 @@ This repository provides a collection of composable Dockerfiles and build script
 
 ---
 
-## Overview
-
-Ryzers is a modular framework for building and running Docker containers tailored for AMD Ryzen AI hardware. It supports a wide range of applications, including machine learning, robotics, vision, and more. The repository is structured to allow easy composition of Dockerfiles, enabling users to build custom containers for their specific needs.
-
-These dockerfiles will also be pushed and actively maintained in their original repository homes whenever possible.  Ryzers will be a collection point of software frameworks to run on AMD hardware.  We are committed to open-source and happy to accept contributions or feedback on packages hosted here.
-
----
-
 ## Installation
 
 To get started, clone the repository and install the required dependencies:
@@ -24,7 +16,7 @@ git clone https://github.com/AMDResearch/Ryzers
 pip install Ryzers/
 ```
 
-For detailed installation instructions and requirements, refer to the included documentation.
+For detailed installation instructions and requirements, refer to the [included documentation](https://amdresearch.github.io/Ryzers/installation.html).
 
 ## Usage
 
@@ -40,7 +32,7 @@ ryzers run
 ryzers run bash
 ```
 
-For detailed build and run instructions, refer to the included documentation.
+For detailed build and run instructions, refer to the instructions included in the package.
 
 ## Supported Packages
 
@@ -56,6 +48,14 @@ For detailed build and run instructions, refer to the included documentation.
 | Ryzen AI NPU                |  [`XDNA`](packages/npu/xdna), [`IRON`](packages/npu/iron), [`NPUEval`](packages/npu/npueval), [`Ryzen AI CVML`](packages/npu/ryzenai_cvml)  |
 | Adaptive SoCs           | [`PYNQ.remote`](packages/adaptive-socs/pynq-remote) |
 | Utilities   | [`JupyterLab`](packages/ide/jupyterlab), [`amdgpu_top`](packages/init/amdgpu_top) |
+
+---
+
+## Overview
+
+Ryzers is a modular framework for building and running Docker containers tailored for AMD Ryzen AI hardware. It supports a wide range of applications, including machine learning, robotics, vision, and more. The repository is structured to allow easy composition of Dockerfiles, enabling users to build custom containers for their specific needs.
+
+These dockerfiles will also be pushed and actively maintained in their original repository homes whenever possible.  Ryzers will be a collection point of software frameworks to run on AMD hardware.  We are committed to open-source and happy to accept contributions or feedback on packages hosted here.
 
 ---
 
