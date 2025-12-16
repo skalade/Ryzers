@@ -16,18 +16,6 @@ This repository provides a collection of composable Dockerfiles and build script
 
 ---
 
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Installation](#installation)
-3. [Usage](#usage)
-4. [Supported Packages](#supported-packages)
-5. [Highlighted Packages](#highlighted-packages)
-5. [Contributing](#contributing)
-6. [License](#license)
-
----
-
 ## Overview
 
 Ryzers is a modular framework for building and running Docker containers tailored for AMD Ryzen AI hardware. It supports a wide range of applications, including machine learning, robotics, vision, and more. The repository is structured to allow easy composition of Dockerfiles, enabling users to build custom containers for their specific needs.
@@ -68,19 +56,15 @@ For detailed build and run instructions, refer to the included documentation.
 | Category        | Software                                                                                                    |
 |-----------------|--------------------------------------------------------------------------------------------------------------------|
 | LLM                     | [`ollama`](packages/llm/ollama), [`llamacpp`](packages/llm/llamacpp), [`lmstudio`](packages/llm/lmstudio)   |
-| VLM / VLA              | [`OpenVLA`](packages/robotics/openvla), [`SmolVLA`](packages/robotics/smolvla), [`GR00T-N1.5`](packages/robotics/gr00t), [`Gemma3`](packages/vlm/gemma3), [`SmolVLM`](packages/vlm/smolvlm),  [`Phi-4`](packages/vlm/phi4), [`openpi`](packages/robotics/openpi), [`LFM2-VL`](packages/vlm/lfm2vl), [`CogACT`](packages/robotics/cogact) |
+| VLM                     | [`Gemma3`](packages/vlm/gemma3), [`SmolVLM`](packages/vlm/smolvlm), [`Phi-4`](packages/vlm/phi4), [`LFM2-VL`](packages/vlm/lfm2vl) |
+| VLA                     | [`OpenVLA`](packages/vla/openvla), [`SmolVLA`](packages/vla/smolvla), [`GR00T-N1.5`](packages/vla/gr00t), [`openpi`](packages/vla/openpi), [`CogACT`](packages/vla/cogact) |
 | Graphics                     | [`O3DE`](packages/graphics/o3de) |
-| Robotics                | [`ROS 2`](packages/ros/ros), [`Gazebo`](packages/ros/gazebo), [`LeRobot`](packages/robotics/lerobot). [`ACT`](packages/robotics/act)    |
+| Robotics                | [`ROS 2`](packages/ros/ros), [`Gazebo`](packages/ros/gazebo), [`LeRobot`](packages/robotics/lerobot), [`ACT`](packages/robotics/act)    |
 | Simulation                |  [`Genesis`](packages/robotics/genesis)  |
 | Vision                  | [`OpenCV`](packages/vision/opencv), [`SAM`](packages/vision/sam), [`MobileSAM`](packages/vision/mobilesam), [`ncnn`](packages/vision/ncnn), [`DINOv3`](packages/vision/dinov3) |
 | Ryzen AI NPU                |  [`XDNA`](packages/npu/xdna), [`IRON`](packages/npu/iron), [`NPUEval`](packages/npu/npueval), [`Ryzen AI CVML`](packages/npu/ryzenai_cvml)  |
 | Adaptive SoCs           | [`PYNQ.remote`](packages/adaptive-socs/pynq-remote) |
 | Utilities   | [`JupyterLab`](packages/ide/jupyterlab), [`amdgpu_top`](packages/init/amdgpu_top) |
-
-Packages Legend: 
-$${\color{red}\small{\texttt{Coming Soon}}}$$, 
-$${\color{orange}\small{\texttt{Help Wanted}}}$$
-
 
 ---
 
