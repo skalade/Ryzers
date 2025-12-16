@@ -7,6 +7,31 @@ This repository provides a collection of composable Dockerfiles and build script
 
 ---
 
+## Overview
+
+Ryzers is a modular framework for building and running Docker containers tailored for AMD Ryzen AI hardware. It supports a wide range of applications, including machine learning, robotics, vision, and more. The repository is structured to allow easy composition of Dockerfiles, enabling users to build custom containers for their specific needs.
+
+These dockerfiles will also be pushed and actively maintained in their original repository homes whenever possible.  Ryzers will be a collection point of software frameworks to run on AMD hardware.  We are committed to open-source and happy to accept contributions or feedback on packages hosted here.
+
+---
+
+## Supported Packages
+
+| Category        | Software                                                                                                    |
+|-----------------|--------------------------------------------------------------------------------------------------------------------|
+| LLM                     | [`ollama`](packages/llm/ollama), [`llamacpp`](packages/llm/llamacpp), [`lmstudio`](packages/llm/lmstudio)   |
+| VLM                     | [`Gemma3`](packages/vlm/gemma3), [`SmolVLM`](packages/vlm/smolvlm), [`Phi-4`](packages/vlm/phi4), [`LFM2-VL`](packages/vlm/lfm2vl) |
+| VLA                     | [`OpenVLA`](packages/vla/openvla), [`SmolVLA`](packages/vla/smolvla), [`GR00T-N1.5`](packages/vla/gr00t), [`openpi`](packages/vla/openpi), [`CogACT`](packages/vla/cogact) |
+| Graphics                     | [`O3DE`](packages/graphics/o3de) |
+| Robotics                | [`ROS 2`](packages/ros/ros), [`Gazebo`](packages/ros/gazebo), [`LeRobot`](packages/robotics/lerobot), [`ACT`](packages/robotics/act)    |
+| Simulation                |  [`Genesis`](packages/robotics/genesis)  |
+| Vision                  | [`OpenCV`](packages/vision/opencv), [`SAM`](packages/vision/sam), [`MobileSAM`](packages/vision/mobilesam), [`ncnn`](packages/vision/ncnn), [`DINOv3`](packages/vision/dinov3) |
+| Ryzen AI NPU                |  [`XDNA`](packages/npu/xdna), [`IRON`](packages/npu/iron), [`NPUEval`](packages/npu/npueval), [`Ryzen AI CVML`](packages/npu/ryzenai_cvml)  |
+| Adaptive SoCs           | [`PYNQ.remote`](packages/adaptive-socs/pynq-remote) |
+| Utilities   | [`JupyterLab`](packages/ide/jupyterlab), [`amdgpu_top`](packages/init/amdgpu_top) |
+
+---
+
 ## Installation
 
 To get started, clone the repository and install the required dependencies:
@@ -33,31 +58,6 @@ ryzers run bash
 ```
 
 For detailed build and run instructions, refer to the instructions included in the package.
-
-## Supported Packages
-
-| Category        | Software                                                                                                    |
-|-----------------|--------------------------------------------------------------------------------------------------------------------|
-| LLM                     | [`ollama`](packages/llm/ollama), [`llamacpp`](packages/llm/llamacpp), [`lmstudio`](packages/llm/lmstudio)   |
-| VLM                     | [`Gemma3`](packages/vlm/gemma3), [`SmolVLM`](packages/vlm/smolvlm), [`Phi-4`](packages/vlm/phi4), [`LFM2-VL`](packages/vlm/lfm2vl) |
-| VLA                     | [`OpenVLA`](packages/vla/openvla), [`SmolVLA`](packages/vla/smolvla), [`GR00T-N1.5`](packages/vla/gr00t), [`openpi`](packages/vla/openpi), [`CogACT`](packages/vla/cogact) |
-| Graphics                     | [`O3DE`](packages/graphics/o3de) |
-| Robotics                | [`ROS 2`](packages/ros/ros), [`Gazebo`](packages/ros/gazebo), [`LeRobot`](packages/robotics/lerobot), [`ACT`](packages/robotics/act)    |
-| Simulation                |  [`Genesis`](packages/robotics/genesis)  |
-| Vision                  | [`OpenCV`](packages/vision/opencv), [`SAM`](packages/vision/sam), [`MobileSAM`](packages/vision/mobilesam), [`ncnn`](packages/vision/ncnn), [`DINOv3`](packages/vision/dinov3) |
-| Ryzen AI NPU                |  [`XDNA`](packages/npu/xdna), [`IRON`](packages/npu/iron), [`NPUEval`](packages/npu/npueval), [`Ryzen AI CVML`](packages/npu/ryzenai_cvml)  |
-| Adaptive SoCs           | [`PYNQ.remote`](packages/adaptive-socs/pynq-remote) |
-| Utilities   | [`JupyterLab`](packages/ide/jupyterlab), [`amdgpu_top`](packages/init/amdgpu_top) |
-
----
-
-## Overview
-
-Ryzers is a modular framework for building and running Docker containers tailored for AMD Ryzen AI hardware. It supports a wide range of applications, including machine learning, robotics, vision, and more. The repository is structured to allow easy composition of Dockerfiles, enabling users to build custom containers for their specific needs.
-
-These dockerfiles will also be pushed and actively maintained in their original repository homes whenever possible.  Ryzers will be a collection point of software frameworks to run on AMD hardware.  We are committed to open-source and happy to accept contributions or feedback on packages hosted here.
-
----
 
 ## Features
 
