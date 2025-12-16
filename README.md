@@ -7,15 +7,6 @@ This repository provides a collection of composable Dockerfiles and build script
 
 ---
 
-## Features
-
-- **Verified AMD Support for Popular Frameworks**: A variety of Robotics and ML software frameworks supported across Ryzen AI platforms.
-- **Optimized for Ryzen AI**: Includes support for hardware-accelerated AI workloads and accelerators like the iGPU and NPUs.
-- **Minimal Host Software Requirements**: Standard Ubuntu support with minimal software requirements
-- **Composable Dockerfiles**: Modular design for reusability across different applications.
-
----
-
 ## Overview
 
 Ryzers is a modular framework for building and running Docker containers tailored for AMD Ryzen AI hardware. It supports a wide range of applications, including machine learning, robotics, vision, and more. The repository is structured to allow easy composition of Dockerfiles, enabling users to build custom containers for their specific needs.
@@ -65,6 +56,15 @@ For detailed build and run instructions, refer to the included documentation.
 | Ryzen AI NPU                |  [`XDNA`](packages/npu/xdna), [`IRON`](packages/npu/iron), [`NPUEval`](packages/npu/npueval), [`Ryzen AI CVML`](packages/npu/ryzenai_cvml)  |
 | Adaptive SoCs           | [`PYNQ.remote`](packages/adaptive-socs/pynq-remote) |
 | Utilities   | [`JupyterLab`](packages/ide/jupyterlab), [`amdgpu_top`](packages/init/amdgpu_top) |
+
+---
+
+## Features
+
+- **Verified AMD Support for Popular Frameworks**: A variety of Robotics and ML software frameworks supported across Ryzen AI platforms.
+- **Optimized for Ryzen AI**: Includes support for hardware-accelerated AI workloads and accelerators like the iGPU and NPUs.
+- **Minimal Host Software Requirements**: Standard Ubuntu support with minimal software requirements
+- **Composable Dockerfiles**: Modular design for reusability across different applications.
 
 ---
 
