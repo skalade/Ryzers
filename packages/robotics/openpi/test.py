@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
 
@@ -7,54 +8,23 @@ import numpy as np
 import time
 import torch
 import os
-import shutil
-import argparse
 
-# Parse arguments first
-parser = argparse.ArgumentParser(description='Test PI0 PyTorch inference')
-parser.add_argument('--debug', action='store_true', help='Enable debug logging and tracing')
-parser.add_argument('--clear-cache', action='store_true', help='Clear Triton cache before running')
-args = parser.parse_args()
-
-# Clear Triton cache if requested
-if args.clear_cache:
-    triton_cache = os.path.expanduser("~/.triton/cache")
-    if os.path.exists(triton_cache):
-        print(f"Clearing Triton cache: {triton_cache}")
-        shutil.rmtree(triton_cache)
-
-# Disable torch.compile completely
-#os.environ["TORCH_COMPILE_DISABLE"] = "1"
-#os.environ["TORCHDYNAMO_DISABLE"] = "1"
-
-# Enable debugging only if requested
-if args.debug:
-    os.environ["HSA_ENABLE_SDMA"] = "0"
-    os.environ["AMD_LOG_LEVEL"] = "4"
-    os.environ["ROCBLAS_LAYER"] = "3"
-    print("Debug mode enabled")
+# Disable autotuning
+os.environ["HIPBLAS_AUTOTUNE"] = "0"
 
 np.random.seed(42)
 
-print("creating policy user")
+print("\nLoading PI0 policy...")
 cfg = _config.get_config("pi0_droid")
 ckpt = "/root/.cache/openpi/openpi-assets/checkpoints/pi0_droid"
 
-print(f"Loading checkpoint from {ckpt}...")
 policy = policy_config.create_trained_policy(cfg, ckpt)
+print("Policy loaded successfully")
 
 # Force disable compilation on the loaded model
 if hasattr(policy, '_sample_actions') and hasattr(policy._sample_actions, '_torchdynamo_inline'):
-    if args.debug:
-        print("Detected compiled _sample_actions, replacing with eager version...")
+    print("Detected compiled _sample_actions, replacing with eager version...")
     policy._sample_actions = policy._sample_actions.__wrapped__ if hasattr(policy._sample_actions, '__wrapped__') else policy._sample_actions
-
-print("Policy loaded successfully")
-
-if args.debug:
-    print(f"\nGPU Memory before inference:")
-    print(f"  Allocated: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
-    print(f"  Reserved: {torch.cuda.memory_reserved() / 1e9:.2f} GB")
 
 H, W = 224, 224
 example = {
@@ -65,74 +35,42 @@ example = {
     "prompt": "pick up the fork",
 }
 
-print("\nRunning inference...")
-success = False
-try:
-    # Warmup run
-    print("Warmup run...")
-    _ = policy.infer(example)
-    print("Warmup complete\n")
-    
-    # Timed runs
-    num_iterations = 100
-    latencies = []
-    
-    print(f"Running {num_iterations} iterations...")
-    for i in range(num_iterations):
-        t0 = time.perf_counter()
-        out = policy.infer(example)
-        elapsed = time.perf_counter() - t0
-        latencies.append(elapsed * 1000)  # Convert to ms
-        
-        if (i + 1) % 10 == 0:
-            print(f"  Progress: {i + 1}/{num_iterations}")
-    
-    # Calculate statistics
-    avg_latency = np.mean(latencies)
-    std_latency = np.std(latencies)
-    min_latency = np.min(latencies)
-    max_latency = np.max(latencies)
-    
-    print(f"\n✓ Inference succeeded!")
-    print(f"  Iterations: {num_iterations}")
-    print(f"  Average latency: {avg_latency:.2f} ms")
-    print(f"  Std deviation: {std_latency:.2f} ms")
-    print(f"  Min latency: {min_latency:.2f} ms")
-    print(f"  Max latency: {max_latency:.2f} ms")
-    print(f"  Actions shape: {out['actions'].shape}")
-    if args.debug:
-        print(f"  Last policy timing: {out['policy_timing']['infer_ms']:.2f} ms")
-    success = True
-    
-except RuntimeError as e:
-    print(f"\n❌ Crash during inference!")
-    print(f"Error: {e}")
-    if args.debug:
-        print(f"\nGPU Memory at crash:")
-        print(f"  Allocated: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
-        print(f"  Reserved: {torch.cuda.memory_reserved() / 1e9:.2f} GB")
-    
-    import traceback
-    traceback.print_exc()
+# Warmup
+print("Warming up...")
+_ = policy.infer(example)
 
-# Print autotuning results summary
-if args.debug:
-    try:
-        from hipblas_autotuning import print_results
-        print_results()
-    except:
-        print("\nAutotuning results not available")
+# Benchmark
+print("Running benchmark...")
+torch.cuda.reset_peak_memory_stats()
+num_iterations = 100
+latencies = []
 
-# Final status
-if success:
-    print("\n" + "="*50)
-    print("✓ TEST PASSED - All operations completed successfully")
-    print("="*50)
-    exit(0)
-else:
-    print("\n" + "="*50)
-    print("❌ TEST FAILED - See errors above")
-    print("="*50)
-    exit(1)
+for _ in range(num_iterations):
+    t0 = time.perf_counter()
+    out = policy.infer(example)
+    elapsed = time.perf_counter() - t0
+    latencies.append(elapsed * 1000)  # Convert to ms
 
+avg_latency_ms = np.mean(latencies)
+std_latency = np.std(latencies)
+min_latency = np.min(latencies)
+max_latency = np.max(latencies)
+avg_latency_s = avg_latency_ms / 1000
 
+# Get action horizon from output
+action_horizon = out['actions'].shape[1] if len(out['actions'].shape) > 1 else 1
+avg_hz = action_horizon / avg_latency_s
+
+print(f"\n{'='*60}")
+print("PI0 Results")
+print(f"{'='*60}")
+print(f"Action horizon: {action_horizon}")
+print(f"Iterations: {num_iterations}")
+print(f"Avg latency: {avg_latency_ms:.2f} ms ({avg_latency_s:.6f} s)")
+print(f"Std deviation: {std_latency:.2f} ms")
+print(f"Min latency: {min_latency:.2f} ms")
+print(f"Max latency: {max_latency:.2f} ms")
+print(f"Avg Hz: {avg_hz:.2f} Hz")
+print(f"Max GPU memory: {torch.cuda.max_memory_allocated() / 1024**2:.2f} MB")
+print(f"Actions shape: {out['actions'].shape}")
+print(f"{'='*60}")
