@@ -8,3 +8,6 @@ environment_variables:
 # Set your Hugging Face token here to access gated Llama2 models
 # Get your token from: https://huggingface.co/settings/tokens
 - "HF_TOKEN=<your_token_here>"
+
+volume_mappings:
+- "~/.cache/huggingface/:/root/.cache/huggingface/"
