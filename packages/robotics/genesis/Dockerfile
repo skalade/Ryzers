@@ -35,7 +35,7 @@ RUN pip3 install --no-cache-dir --break-system-packages "numpy==2.1.2" && \
     pip3 install --no-cache-dir --break-system-packages "scikit-image==0.24.0"
 
 # Genesis and gstaichi (compatible with Genesis 0.3.3; beta release fixes kernel interface mismatch)
-RUN pip3 install --no-cache-dir --break-system-packages "gstaichi==2.5.0b4" \
+RUN pip3 install --no-cache-dir --break-system-packages "gstaichi==2.5.0" \
  && pip3 install --no-cache-dir --break-system-packages "genesis-world==0.3.3"
 
 # Copy test script
