@@ -1,0 +1,10 @@
+# Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+
+environment_variables:
+- "HSA_OVERRIDE_GFX_VERSION=11.0.0" 
+- "HF_TOKEN=<your_token_here>"
+
+# Map huggingface cache so we don't need to re-download models
+volume_mappings:
+- "~/.cache/huggingface/:/root/.cache/huggingface/"
