@@ -1,11 +1,11 @@
-### SmolVLA
+### Alpamayo
 
-This directory contains the docker configuration files to run [SmolVLA from Hugging Face](https://huggingface.co/blog/smolvla).
+This directory contains the docker configuration files to run [Alpamayo](https://github.com/NVlabs/alpamayo).
 
 ### Build and run the Docker Image
 
 ```sh
-ryzers build smolvla
+ryzers build alpamayo
 ryzers run
 ```
 
