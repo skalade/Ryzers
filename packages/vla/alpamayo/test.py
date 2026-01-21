@@ -2,6 +2,27 @@
 # Copyright(C) 2025 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
 
+import copy
+import numpy as np
+import mediapy as mp
+import pandas as pd
+
+import torch
+from alpamayo_r1.models.alpamayo_r1 import AlpamayoR1
+from alpamayo_r1.load_physical_aiavdataset import load_physical_aiavdataset
+from alpamayo_r1 import helper
+
+import time
+
+model = AlpamayoR1.from_pretrained("nvidia/Alpamayo-R1-10B", dtype=torch.bfloat16).to("cuda")
+processor = helper.get_processor(model.tokenizer)
+
+clip_ids = pd.read_parquet("clip_ids.parquet")["clip_id"].tolist()
+clip_id = clip_ids[774]
+# clip_id = '030c760c-ae38-49aa-9ad8-f5650a545d26'
+
+data = load_physical_aiavdataset(clip_id)
+
 messages = helper.create_message(data["image_frames"].flatten(0, 1))
 
 inputs = processor.apply_chat_template(
