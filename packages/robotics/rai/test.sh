@@ -19,7 +19,7 @@ fi
 # Test RAI core import
 echo ""
 echo "Testing RAI core import..."
-python3 -c "
+PYTHONWARNINGS=ignore python3 -c "
 from rai.agents import AgentRunner, ReActAgent
 from rai.initialization import get_llm_model
 print('RAI core imports successful!')
@@ -32,9 +32,11 @@ print('  - get_llm_model: available')
 echo ""
 echo "Testing RAI whoami import..."
 python3 -c "
-from rai_whoami import RobotProfile
+from rai_whoami import EmbodimentInfo, Pipeline, PipelineBuilder
 print('RAI whoami imports successful!')
-print('  - RobotProfile: available')
+print('  - EmbodimentInfo: available')
+print('  - Pipeline: available')
+print('  - PipelineBuilder: available')
 "
 
 # Check ROS 2 tools
@@ -47,7 +49,8 @@ echo ""
 echo "=========================================="
 echo "Version Information"
 echo "=========================================="
-python3 -c "import rai; print(f'RAI version: check pyproject.toml')"
+RAI_VERSION=$(grep '^version' /opt/rai/src/rai_core/pyproject.toml | head -1 | cut -d'"' -f2)
+echo "RAI version: ${RAI_VERSION}"
 echo "ROS 2 distro: ${ROS_DISTRO}"
 python3 --version
 

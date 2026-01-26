@@ -12,10 +12,16 @@ RUN apt-get update && apt-get install -y \
     git \
     ffmpeg \
     libportaudio2 \
+    python3-venv \
  && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry for Python dependency management
-RUN pip install --break-system-packages poetry
+# Create virtual environment
+ENV VIRTUAL_ENV=/opt/rai-venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install Poetry
+RUN pip install --upgrade pip poetry
 
 # Clone and install RAI framework
 WORKDIR /opt
@@ -24,6 +30,9 @@ RUN git clone https://github.com/RobotecAI/rai.git
 WORKDIR /opt/rai
 RUN poetry config virtualenvs.create false \
  && poetry install --no-interaction --no-ansi
+
+# Ensure venv is activated in shells
+RUN echo "source $VIRTUAL_ENV/bin/activate" >> /root/.bashrc
 
 # Copy test scripts
 WORKDIR /ryzers
