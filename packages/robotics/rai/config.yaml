@@ -1,0 +1,19 @@
+# Copyright (C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+
+# RAI - Robotec AI Framework for Embodied AI
+# https://github.com/RobotecAI/rai
+# Composable package - use with: ryzers build ros rai
+
+port_mappings:
+  - "8501:8501"   # Streamlit frontend
+
+volume_mappings:
+  - "$PWD/workspace/.cache/huggingface:/root/.cache/huggingface"
+  - "$PWD/workspace/.rai:/root/.rai"
+
+# Uncomment to set your OpenAI API key
+# environment_variables:
+#   - "OPENAI_API_KEY=your-api-key-here"
+
+docker_extra_run_flags: "--shm-size=2g"
