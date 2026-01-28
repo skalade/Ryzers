@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     libportaudio2 \
     python3-venv \
+    ros-${ROS_DISTRO}-rai-interfaces \
  && rm -rf /var/lib/apt/lists/*
 
 # Use existing virtual env from base image
@@ -32,7 +33,7 @@ RUN vcs import < ros_deps.repos
 RUN poetry config virtualenvs.create false && \
     poetry install --all-groups
 
-RUN colcon build --symlink-install
+#RUN colcon build --symlink-install
 
 # Copy test scripts
 WORKDIR /ryzers
