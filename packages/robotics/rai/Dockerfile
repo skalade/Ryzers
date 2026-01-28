@@ -15,24 +15,24 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
  && rm -rf /var/lib/apt/lists/*
 
-# Create virtual environment
-ENV VIRTUAL_ENV=/opt/rai-venv
-RUN python3 -m venv $VIRTUAL_ENV
+# Use existing virtual env from base image
+ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN echo "source $VIRTUAL_ENV/bin/activate" >> /root/.bashrc
 
-# Install Poetry
-RUN pip install --upgrade pip poetry
+# Install Poetry into the venv
+RUN pip install --upgrade pip poetry empy lark
 
 # Clone and install RAI framework
-WORKDIR /opt
+WORKDIR /ryzers
 RUN git clone https://github.com/RobotecAI/rai.git
 
-WORKDIR /opt/rai
-RUN poetry config virtualenvs.create false \
- && poetry install --no-interaction --no-ansi
+WORKDIR /ryzers/rai
+RUN vcs import < ros_deps.repos
+RUN poetry config virtualenvs.create false && \
+    poetry install --all-groups
 
-# Ensure venv is activated in shells
-RUN echo "source $VIRTUAL_ENV/bin/activate" >> /root/.bashrc
+RUN colcon build --symlink-install
 
 # Copy test scripts
 WORKDIR /ryzers
