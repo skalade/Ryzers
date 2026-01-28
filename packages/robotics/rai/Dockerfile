@@ -46,10 +46,12 @@ RUN vcs import < demos.repos
 RUN poetry config virtualenvs.create false && \
     poetry install --all-groups
 
-RUN rosdep install --from-paths src/examples/rai-manipulation-demo/ros2_ws/src --ignore-src -r -y
+RUN rosdep init && \
+    rosdep update && \
+    rosdep install --from-paths src/examples/rai-manipulation-demo/ros2_ws/src --ignore-src -r -y
 
 # Download demo
-#RUN . ./scripts/download_demo.sh manipulation
+RUN . ./scripts/download_demo.sh manipulation
 
 # Build ROS 2 packages (need to source ROS environment first)
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
