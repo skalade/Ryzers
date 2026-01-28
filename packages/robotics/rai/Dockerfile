@@ -18,9 +18,14 @@ RUN apt-get update && apt-get install -y \
     ros-${ROS_DISTRO}-moveit \
     ros-${ROS_DISTRO}-gazebo-msgs \
     ros-${ROS_DISTRO}-moveit-resources-panda-moveit-config \
-    ros-$ROS_DISTRO-depth-image-proc \
-    ros-$ROS_DISTRO-ackermann-msgs \
+    ros-${ROS_DISTRO}-depth-image-proc \
+    ros-${ROS_DISTRO}-ackermann-msgs \
+    ros-${ROS_DISTRO}-sdformat-urdf \
  && rm -rf /var/lib/apt/lists/*
+
+# Configure linker to find sdformat vendor libraries
+RUN echo "/opt/ros/${ROS_DISTRO}/opt/sdformat_vendor/lib" > /etc/ld.so.conf.d/ros-sdformat.conf && \
+    ldconfig
 
 # Use existing virtual env from base image
 ENV VIRTUAL_ENV=/opt/venv
@@ -37,8 +42,10 @@ RUN git clone https://github.com/RobotecAI/rai.git
 WORKDIR /ryzers/rai
 RUN vcs import < ros_deps.repos
 RUN vcs import < demos.repos
+
 RUN poetry config virtualenvs.create false && \
     poetry install --all-groups
+
 RUN rosdep install --from-paths src/examples/rai-manipulation-demo/ros2_ws/src --ignore-src -r -y
 
 # Download demo
