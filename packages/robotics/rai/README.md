@@ -1,10 +1,14 @@
-# RAI - Robotec AI Framework
+# RAI
 
-RAI is a flexible AI agent framework to develop and deploy Embodied AI features for robots.
+RAI (Robot Agent Interface) is a flexible AI agent framework to develop and deploy Embodied AI features for robots created and maintained by [Robotec.ai](https://www.robotec.ai/).
+
+## Configuration
+
+By default RAI uses OpenAI as the LLM vendor - make sure to set your `OPENAI_API_KEY` in this package's `config.yaml`. Local endpoints with Ollama are also supported, in which case simply build your ryzer with the additional ollama package.
 
 ## Build
 
-We build RAI on top of the ROS Ryzer as a dependency:
+We build RAI on top of the ROS 2 ryzer as a dependency:
 
 ```bash
 ryzers build ros rai
