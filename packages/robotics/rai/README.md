@@ -4,7 +4,7 @@ RAI is a flexible AI agent framework to develop and deploy Embodied AI features 
 
 ## Build
 
-RAI is a composable package that requires ROS 2 as a base:
+We build RAI on top of the ROS Ryzer as a dependency:
 
 ```bash
 ryzers build ros rai
@@ -15,29 +15,24 @@ ryzers build ros rai
 ```bash
 # Run the test script
 ryzers run
-
-# Interactive shell
-ryzers run bash
-
-# Run with Ollama for local LLM
-ryzers build ros rai ollama
-ryzers run bash
 ```
 
-## Configuration
+The default test will verify the environment and installed packages.
 
-Set your LLM API key before running:
+## Manipulation demo
+
+To run the manipulation demo we need to add O3DE to the build 
 
 ```bash
-export OPENAI_API_KEY=your-key-here
-# or use Ollama for local inference
+ryzers build ros o3de rai
+ryzers run manipulation_demo.sh
 ```
 
-Initialize RAI configuration:
+This will launch a streamlit app where you can chat with the robot agent and ask it to perform tasks on the table bench. Note that the simulation can take a while to load, give it a minute or two until the items spawn on the table. Once everything is loaded you can use the streamlit chat window to tell the robot agent to, for example, "stack the cubes".
 
-```bash
-rai-config-init
-```
+<img src="images/manipulation_demo.gif">
+
+
 
 ## Documentation
 

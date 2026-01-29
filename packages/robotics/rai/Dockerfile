@@ -62,6 +62,9 @@ WORKDIR /ryzers
 COPY test.sh /ryzers/test_rai.sh
 RUN chmod +x /ryzers/test_rai.sh
 
+COPY manipulation_demo.sh /ryzers/manipulation_demo.sh
+RUN chmod +x /ryzers/manipulation_demo.sh
+
 # Expose common ports (Streamlit frontend, LangFuse)
 EXPOSE 8501
 

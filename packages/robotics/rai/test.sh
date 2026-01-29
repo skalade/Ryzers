@@ -49,17 +49,7 @@ echo ""
 echo "=========================================="
 echo "Version Information"
 echo "=========================================="
-RAI_VERSION=$(grep '^version' /opt/rai/src/rai_core/pyproject.toml | head -1 | cut -d'"' -f2)
+RAI_VERSION=$(grep '^version' /ryzers/rai/src/rai_core/pyproject.toml | head -1 | cut -d'"' -f2)
 echo "RAI version: ${RAI_VERSION}"
 echo "ROS 2 distro: ${ROS_DISTRO}"
 python3 --version
-
-echo ""
-echo "=========================================="
-echo "RAI Framework test completed successfully!"
-echo "=========================================="
-echo ""
-echo "To get started with RAI:"
-echo "  1. Set your LLM API key (e.g., OPENAI_API_KEY)"
-echo "  2. Run: rai-config-init"
-echo "  3. See documentation: https://robotecai.github.io/rai/"
