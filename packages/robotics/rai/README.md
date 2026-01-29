@@ -4,7 +4,15 @@ RAI (Robot Agent Interface) is a flexible AI agent framework to develop and depl
 
 ## Configuration
 
-By default RAI uses OpenAI as the LLM vendor - make sure to set your `OPENAI_API_KEY` in this package's `config.yaml`. Local endpoints with Ollama are also supported, in which case simply build your ryzer with the additional ollama package.
+By default RAI uses OpenAI as the LLM vendor - make sure to set your `OPENAI_API_KEY` in this package's `config.yaml`:
+
+```config
+# Uncomment to set your OpenAI API key
+# environment_variables:
+#   - "OPENAI_API_KEY=your-api-key-here"
+``` 
+
+Local endpoints with Ollama are also supported, in which case simply build your ryzer with the additional ollama package.
 
 ## Build
 
