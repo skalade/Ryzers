@@ -4,7 +4,13 @@ RAI (Robot Agent Interface) is a flexible AI agent framework to develop and depl
 
 ## Configuration
 
-By default RAI uses OpenAI as the LLM vendor - make sure to set your `OPENAI_API_KEY` in this package's `config.yaml`:
+### ROS 2 setup
+
+While RAI supports multiple ROS versions, this package has only been tested with the `jazzy` release. When building make sure the [ROS ryzer package](../../ros/ros/config.yaml) config is using `jazzy` before proceeding to build this package.
+
+### LLM vendor setup
+
+RAI supports multiple vendors - OpenAI, AWS and Ollama. By default RAI uses OpenAI as the LLM vendor - if that is the one you want to use, make sure to set your `OPENAI_API_KEY` in this package's `config.yaml`:
 
 ```config
 # Uncomment to set your OpenAI API key
@@ -45,6 +51,42 @@ This will launch a streamlit app where you can chat with the robot agent and ask
 Once everything is loaded you can use the streamlit chat window to tell the robot agent to, for example, "stack the cubes".
 
 <img src="images/manipulation_demo.gif">
+
+## Run benchmarks with local LLM
+
+We'll append the ollama package to enable locally run models.
+
+```bash
+ryzers build ros o3de rai ollama
+ryzers run bash
+```
+
+It is recommended to visit the RAI [benchmarks documentation](https://robotecai.github.io/rai/tutorials/benchmarking/) for more details on individual benchmarks and options. Below we give an example of running an ollama server and running the 3 benchmarks for tool calling, manipulation and VLMs with models running locally on the iGPU.
+
+```bash
+# Start ollama server
+ollama serve &
+
+# Make sure to pull the models you want to test before launching benchmarks
+ollama pull qwen2.5:7b
+ollama pull gemma3:4b
+
+# Setup ROS environment
+source install/setup.sh
+source /opt/ros/jazzy/setup.sh
+
+# Run tool calling benchmark
+cd /ryzers/rai
+python src/rai_bench/rai_bench/examples/tool_calling_agent.py --model-name qwen2.5:7b --vendor ollama --extra-tool-calls 5 --task-types basic  --n-shots 5 --prompt-detail descriptive --complexities easy
+
+# Run manipulation benchmark
+python src/rai_bench/rai_bench/examples/manipulation_o3de.py --model-name qwen2.5:7b --vendor ollama --levels trivial
+
+# Run VLM benchmark
+python src/rai_bench/rai_bench/examples/vlm_benchmark.py --model-name gemma3:4b --vendor ollama
+```
+
+By default we mount the benchmark results in an experiments directory so that nothing disappears once the docker container stops. You will find a `results_summary.csv` for an overview there along with more detailed logs.
 
 ## Documentation
 
