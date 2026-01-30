@@ -6,7 +6,7 @@ RAI (Robot Agent Interface) is a flexible AI agent framework to develop and depl
 
 ### ROS 2 setup
 
-While RAI supports multiple ROS versions, this package has only been tested with the `jazzy` release. When building make sure the [ROS ryzer package](../../ros/ros/config.yaml) config is using `jazzy` before proceeding to build this package.
+While RAI supports multiple ROS versions, this package has only been tested with the `jazzy` release. When building make sure your [ROS ryzer config](../../ros/ros/config.yaml) is using `jazzy` before proceeding to build this package.
 
 ### LLM vendor setup
 
@@ -72,11 +72,11 @@ ollama pull qwen2.5:7b
 ollama pull gemma3:4b
 
 # Setup ROS environment
+cd /ryzers/rai
 source install/setup.sh
 source /opt/ros/jazzy/setup.sh
 
 # Run tool calling benchmark
-cd /ryzers/rai
 python src/rai_bench/rai_bench/examples/tool_calling_agent.py --model-name qwen2.5:7b --vendor ollama --extra-tool-calls 5 --task-types basic  --n-shots 5 --prompt-detail descriptive --complexities easy
 
 # Run manipulation benchmark
@@ -86,7 +86,7 @@ python src/rai_bench/rai_bench/examples/manipulation_o3de.py --model-name qwen2.
 python src/rai_bench/rai_bench/examples/vlm_benchmark.py --model-name gemma3:4b --vendor ollama
 ```
 
-By default we mount the benchmark results in an experiments directory so that nothing disappears once the docker container stops. You will find a `results_summary.csv` for an overview there along with more detailed logs.
+By default we mount the benchmark results in an experiments directory on the path you ran `ryzers run` from. You will find a `results_summary.csv` for an overview there along with more detailed logs.
 
 ## Documentation
 
