@@ -19,7 +19,7 @@ These dockerfiles will also be pushed and actively maintained in their original 
 
 | Category        | Software                                                                                                    |
 |-----------------|--------------------------------------------------------------------------------------------------------------------|
-| LLM                     | [`ollama`](packages/llm/ollama), [`llamacpp`](packages/llm/llamacpp), [`lmstudio`](packages/llm/lmstudio)   |
+| LLM                     | [`ollama`](packages/llm/ollama), [`llamacpp`](packages/llm/llamacpp), [`lmstudio`](packages/llm/lmstudio), [`GEPA`](packages/llm/gepa)   |
 | VLM                     | [`Gemma3`](packages/vlm/gemma3), [`SmolVLM`](packages/vlm/smolvlm), [`Phi-4`](packages/vlm/phi4), [`LFM2-VL`](packages/vlm/lfm2vl) |
 | VLA                     | [`OpenVLA`](packages/vla/openvla), [`SmolVLA`](packages/vla/smolvla), [`GR00T-N1.5`](packages/vla/gr00t), [`openpi`](packages/vla/openpi), [`CogACT`](packages/vla/cogact) |
 | Graphics                     | [`O3DE`](packages/graphics/o3de) |
