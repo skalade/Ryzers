@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: MIT
 
 cd /ryzers/flower_vla_calvin
-python3 /ryzers/test.py
+python3 test.py
