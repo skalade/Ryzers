@@ -4,6 +4,11 @@
 
 import torch
 import time
+
+# Disable optimizations, currently trigger HIP errors
+torch.backends.cuda.enable_flash_sdp(False)
+torch.backends.cuda.enable_mem_efficient_sdp(False)
+
 from omegaconf import OmegaConf
 from huggingface_hub import hf_hub_download
 from safetensors.torch import load_file
