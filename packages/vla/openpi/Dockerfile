@@ -58,6 +58,7 @@ RUN git clone https://github.com/Physical-Intelligence/openpi && \
 COPY openpi.patch /ryzers/openpi
 RUN cd openpi && \
     git apply ./openpi.patch && \
+    sed -i '/^override-dependencies = \[/ s/\]/, "av==13.1.0"]/' pyproject.toml && \
     GIT_LFS_SKIP_SMUDGE=1 uv sync && \
     GIT_LFS_SKIP_SMUDGE=1 uv pip install -e .
 
