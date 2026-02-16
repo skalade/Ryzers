@@ -1,7 +1,7 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-ARG DRIVER_VERSION="4264303"
+ARG DRIVER_VERSION="854ff04"
 
 # required by rocm driver
 RUN groupadd -f render && usermod -aG render root
