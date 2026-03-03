@@ -70,7 +70,11 @@ For detailed build and run instructions, refer to the instructions included in t
 
 ## Contributing
 
-We welcome contributions to Ryzers! If you have ideas for new features, bug fixes, or improvements, please submit a pull request or open an issue.  The format of a Ryzer package can be quickly learned from existing packages and Co-Pilots and Chatbots are quite good at vibe-coding new packages.  For detailed guidelines, see [CONTRIBUTING.md](docs/contributing.md).
+We welcome contributions to Ryzers! If you have ideas for new features, bug fixes, or improvements, please submit a pull request or open an issue.
+
+**Using an AI coding agent?** Point it at [`skills/new-ryzer/SKILL.md`](skills/new-ryzer/SKILL.md) — it has everything an agent needs to scaffold a new package correctly (templates, conventions, config schema, and reference examples). Works with any agent: Claude Code, Codex, Cursor, Copilot, etc.
+
+For detailed guidelines, see [CONTRIBUTING.md](docs/contributing.md).
 
 ---
 
