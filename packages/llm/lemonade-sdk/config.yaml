@@ -1,0 +1,28 @@
+# Copyright(C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+
+### ryzers build options
+
+# gpu_support: false          # add GPU support, default is true
+# x11_display: false          # add X11 support, default is true
+# init_image: "image_name"    # The first docker image to use as a base
+                              # default is ryzers.RYZERS_DEFAULT_INIT_IMAGE
+
+# build_arguments:            # List of ARGs to pass to the `docker build` call
+# - "ENABLE_NPU=true"         # Enable NPU support (XRT/XDNA + FastFlowLM)
+
+
+### ryzers run options
+
+# environment_variables:              # List of environment variables to set in the container
+# - "ENV_VARIABLE=VALUE"              # E.g. "PYTHONPATH=/path/to/python"
+
+port_mappings:
+- "8000:8000"
+
+volume_mappings:
+- "$PWD/workspace/.cache/huggingface:/root/.cache/huggingface"
+
+# docker_extra_run_flags:                              # Uncomment for NPU support:
+# - "--device=/dev/accel/accel0:/dev/accel/accel0"     # NPU device
+# - "--ulimit memlock=-1"                              # Required for NPU
