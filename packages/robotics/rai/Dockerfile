@@ -70,6 +70,9 @@ RUN chmod +x /ryzers/test_rai.sh
 COPY manipulation_demo.sh /ryzers/manipulation_demo.sh
 RUN chmod +x /ryzers/manipulation_demo.sh
 
+COPY manipulation_demo_lemonade.sh /ryzers/manipulation_demo_lemonade.sh
+RUN chmod +x /ryzers/manipulation_demo_lemonade.sh
+
 # Expose common ports (Streamlit frontend, LangFuse)
 EXPOSE 8501
 
