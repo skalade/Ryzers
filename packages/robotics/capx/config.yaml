@@ -1,0 +1,32 @@
+# Copyright(C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+
+### ryzers build options
+
+# gpu_support: false          # add GPU support, default is true
+# x11_display: false          # add X11 support, default is true
+# init_image: "image_name"    # The first docker image to use as a base
+                              # default is ryzers.RYZERS_DEFAULT_INIT_IMAGE
+
+# build_arguments:            # List of ARGs to pass to the `docker build` call
+# - "CAPX_REF=v0.0.1"         # Pin a different CaP-X git ref
+
+
+### ryzers run options
+
+environment_variables:
+- "HSA_OVERRIDE_GFX_VERSION=11.0.0"   # Ryzen AI iGPU compatibility shim
+- "MUJOCO_GL=egl"                     # MuJoCo headless rendering
+- "PYOPENGL_PLATFORM=egl"
+
+# Expose the LLM proxy (8110) and the Web UI (8200) used by capx/envs/launch.py.
+port_mappings:
+- "8110:8110"
+- "8200:8200"
+
+# Cache HuggingFace assets (e.g. transformers tokenizers) across runs.
+volume_mappings:
+- "$PWD/workspace/.cache/huggingface:/root/.cache/huggingface"
+
+# Robosuite/MuJoCo can be hungry for shared memory during parallel rollouts.
+docker_extra_run_flags: "--shm-size=2g"
