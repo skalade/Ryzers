@@ -31,9 +31,10 @@ RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
 # are intentionally skipped.
 RUN pip3 install --no-cache-dir --break-system-packages \
     "numpy<2" \
+    "numba" \
     "gymnasium>=0.29" \
     "mujoco>=3.2.0" \
-    "robosuite>=1.5.0" \
+    "termcolor" \
     "tyro>=0.8.5" \
     "pydantic>=2.7" \
     "rich>=13.7" \
@@ -64,6 +65,29 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     "cloudpickle" \
     "open3d" \
     "PyOpenGL>=3.1.7"
+
+# Install the CaP-X fork of robosuite (uynitsuj/robosuite), which adds the
+# `skip_render_images=` kwarg on MujocoEnv.step that capx.envs.simulators
+# expects. Vanilla robosuite from PyPI lacks this kwarg, causing trials to
+# crash with `TypeError: MujocoEnv.step() got an unexpected keyword argument
+# 'skip_render_images'`. This matches upstream's [tool.uv.sources] mapping of
+# `robosuite -> capx/third_party/robosuite` (which is the same fork).
+#
+# --no-deps avoids pulling mink>=1.0 (which requires numpy>=2 and would force-
+# upgrade us off of numpy 1.x). All real runtime deps (numpy, scipy, mujoco,
+# opencv, h5py, pillow, ...) are already installed above. mink is only used by
+# robosuite for the GR1 humanoid's whole-body IK, which we don't exercise.
+RUN pip3 install --no-cache-dir --break-system-packages --no-deps \
+    "robosuite @ git+https://github.com/uynitsuj/robosuite.git"
+
+# PyRoKi (Python robot kinematics, JAX-based) -- needed by the privileged /
+# minimal perception-server profile (capx.serving.launch_pyroki_server).
+# Pin jax<0.4.30 (matches upstream's [tool.uv] override): JAX 0.4.30+ requires
+# numpy>=2, which would force-upgrade us out of the robosuite-friendly numpy 1.x.
+RUN pip3 install --no-cache-dir --break-system-packages \
+    "jax<0.4.30" "jaxlib<0.4.30" \
+ && pip3 install --no-cache-dir --break-system-packages \
+    "pyroki @ git+https://github.com/chungmin99/pyroki.git"
 
 WORKDIR /ryzers
 
