@@ -93,7 +93,7 @@ These are the units of work for the rest of this document. Each entry is sized s
 |-------|-----------------------------------------------------|-------------|------------------------------------------------------|
 | T1-A  | `jax[rocm]` for pyroki (faster IK)                  | NOT FEASIBLE TODAY | see "Tier 1.A" below — version conflict with ROCm 7.2  |
 | T1-B  | SAM3 ROCm/CPU fallback investigation                | not started | see "Tier 1.B" below                                 |
-| T1-C  | LIBERO-PRO support                                  | not started | see "Tier 1.C" below                                 |
+| T1-C  | LIBERO-PRO support                                  | DEFERRED    | blocked on T1-B; every shipped libero YAML needs SAM3+GraspNet too |
 | T1-D  | `--use-oracle-code` (no-LLM) eval mode              | DONE        | shipped as `demo.sh` / `ryzers run /ryzers/demo_capx.sh` |
 
 ### Tier 2 — medium effort (multi-dep / build-from-source)
@@ -188,31 +188,40 @@ See if SAM3 (or a ROCm-friendly equivalent) can be made to run as the visual-gro
 
 ---
 
-## Tier 1.C — LIBERO-PRO support
+## Tier 1.C — LIBERO-PRO support  [DEFERRED — blocked on T1-B]
 
 ### Goal
 
-Run LIBERO benchmark tasks (130 task suites) on this image. LIBERO is plain Python + a robosuite fork; should be much easier than SAM3.
+Run LIBERO benchmark tasks (130 task suites) on this image.
 
-### Constraints
+### Findings (2026-05-12)
 
-- Upstream cap-x docs say LIBERO needs a *separate* Python 3.12 venv because its `robosuite==1.4.0` fork conflicts with the 1.5.x fork we use for the Robosuite envs.
-- Both forks live in `[tool.uv.sources]` under different extras, but pip can only have one `robosuite` installed at a time.
+The robosuite-fork conflict turns out to be the smaller half of the problem. The bigger half: **every shipped LIBERO config — including the `*_privileged.yaml` variant — declares `[SAM3, Contact-GraspNet, PyRoKi]` as its `api_servers` block.** There is no LIBERO equivalent of the cube_stack `_privileged.yaml` that uses PyRoKi only.
 
-### Hypotheses to test
+Specifically:
+- `env_configs/libero/franka_libero_spatial_0.yaml`           → SAM3 + GraspNet + PyRoKi
+- `env_configs/libero/franka_libero_spatial_0_privileged.yaml` → SAM3 + GraspNet + PyRoKi (despite the name)
+- All other libero configs in this directory                   → same pattern
 
-1. **One-image-two-venvs.** Add a sibling venv at `/opt/venv-libero` containing only the LIBERO stack. Switching is a `source` away. Big image but conceptually simple.
-2. **Single venv with the LIBERO fork.** Use Max-Fu/robosuite (`maxf/egl_context` branch) for *both* LIBERO and the default Robosuite envs. Risk: the cap-x cube_stack tasks may rely on uynitsuj-fork-specific behavior that maxf doesn't have.
-3. **Branch the Ryzer.** Ship a separate `capx-libero` Ryzer that builds on the existing `capx` and replaces the robosuite install with the LIBERO fork. Lets users pick at build time.
+So even if we sort out the dual-robosuite-fork installation, we cannot run any of the shipped LIBERO configs on ROCm without writing our own from scratch.
 
-### Plan
+The robosuite-fork side of it (Max-Fu/robosuite#maxf/egl_context vs uynitsuj/robosuite) confirmed via WebFetch: the LIBERO fork does **not** carry the `skip_render_images` kwarg, so it's a hard either/or with cube_stack support — can't use a single fork for both.
 
-1. Try (2) first — install Max-Fu/robosuite + libero==0.1.1 + bddl into a sandbox container. If both `import robosuite` and the cube_stack eval still pass, this is the cleanest answer.
-2. If (2) breaks the cube_stack eval, fall back to (1) or (3).
+The user already has a separate `packages/robotics/libero/` Ryzer for standalone (non-cap-x) LIBERO benchmark use; that covers the vanilla-libero use case.
 
-### Findings
+### What would unblock this
 
-(populate as we go)
+1. Solve T1-B (SAM3 fallback / replacement) so a custom LIBERO YAML with PyRoKi-only `api_servers` can be authored against the cap-x LIBERO integration.
+2. Or accept "oracle-mode-only LIBERO": ship a custom YAML that uses PyRoKi-only and hard-codes `use_oracle_code: true`. This proves the LIBERO sim stack works without ever exercising perception, and might be a useful smoke test, but it doesn't actually run any LIBERO research workflows.
+
+### Sketch of the eventual port (when T1-B lands)
+
+- Add a sibling `capx-libero` Ryzer (chained: `ryzers build capx capx-libero`) that:
+  1. `pip uninstall robosuite` (the uynitsuj fork).
+  2. `pip install --no-deps "robosuite @ git+https://github.com/Max-Fu/robosuite.git@maxf/egl_context"`.
+  3. `pip install libero==0.1.1 easydict==1.9 robomimic==0.2.0 einops==0.4.1 thop==0.1.1-2209072238 bddl==1.0.1 future==0.18.2 cloudpickle==2.1.0 gym==0.25.2 scikit-learn`.
+  4. Ship one or more `env_configs/libero/*_rocm.yaml` files that use only `launch_pyroki_server.main` in their `api_servers` block.
+- Layered design lets users `ryzers build capx` (cube_stack) or `ryzers build capx capx-libero` (LIBERO) at choice; we don't try to support both stacks in one image.
 
 ---
 
