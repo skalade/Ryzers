@@ -91,7 +91,7 @@ These are the units of work for the rest of this document. Each entry is sized s
 
 | ID    | Item                                                | Status      | Pointer                                              |
 |-------|-----------------------------------------------------|-------------|------------------------------------------------------|
-| T1-A  | `jax[rocm]` for pyroki (faster IK)                  | not started | see "Tier 1.A" below                                 |
+| T1-A  | `jax[rocm]` for pyroki (faster IK)                  | NOT FEASIBLE TODAY | see "Tier 1.A" below — version conflict with ROCm 7.2  |
 | T1-B  | SAM3 ROCm/CPU fallback investigation                | not started | see "Tier 1.B" below                                 |
 | T1-C  | LIBERO-PRO support                                  | not started | see "Tier 1.C" below                                 |
 | T1-D  | `--use-oracle-code` (no-LLM) eval mode              | DONE        | shipped as `demo.sh` / `ryzers run /ryzers/demo_capx.sh` |
@@ -119,34 +119,44 @@ These are the units of work for the rest of this document. Each entry is sized s
 
 ---
 
-## Tier 1.A — jax[rocm] for pyroki
+## Tier 1.A — jax[rocm] for pyroki  [NOT FEASIBLE TODAY]
 
 ### Goal
 
-Replace CPU JAX with ROCm JAX so PyRoKi's IK/collision constraint solving runs on the iGPU. PyRoKi is JAX-only (no PyTorch fallback), and JAX kernels are jit-compiled, so this could noticeably speed up multi-trial evals.
+Replace CPU JAX with ROCm JAX so PyRoKi's IK runs on the iGPU.
 
-### Constraints
+### Findings (2026-05-12)
 
-- Need to keep `jax<0.4.30` so numpy stays 1.x (gotcha #6 above).
-- Need a `jaxlib` ROCm wheel that matches the same minor version.
-- ROCm version on the host must line up with whatever AMD's prebuilt jaxlib expects.
+The version matrix doesn't have a working cell for our base image:
 
-### Open questions
+| JAX version | ROCm plugin family    | Numpy floor | ROCm 7.2 host? |
+|-------------|-----------------------|-------------|----------------|
+| 0.4.29      | none (CPU only)       | 1.22        | yes (current)  |
+| 0.4.33-0.4.35 | `jax_rocm60_plugin` | 1.22        | NO — wheel hard-imports `libamdhip64.so.6`, base only has `.so.7` |
+| 0.6.0+      | `jax_rocm7_plugin`    | 2.0+        | yes for runtime, but force-upgrades numpy off 1.x and risks breaking robosuite/numba/pyrender deps we hand-pinned |
 
-1. Does AMD ship a `jax[rocm]==0.4.x` wheel for ROCm 7.2? Their official channel is `https://github.com/ROCm/jax/releases` and the `pip install jax-rocm60-pjrt jax-rocm60-plugin` flow.
-2. Does pyroki actually exercise enough JAX to justify a GPU; what's the speedup on a Franka 7-DOF chain with 41 collision spheres?
-3. Will an ROCm jaxlib install conflict with anything else (e.g. by pulling `numpy>=2`)?
+So the only ROCm wheels that match our ROCm 7.2 host are JAX 0.6.0+, which conflict with `numpy<2`. AMD's ROCm 6 wheels (which support older JAX) cannot find `libamdhip64.so.6` on this image and fail import.
 
-### Plan
+### Probe transcript
 
-1. Spawn a fresh `ryzerdocker` shell, try `pip install jax-rocm60-plugin jax-rocm60-pjrt` (matching AMD's docs) and see what versions resolve.
-2. If it imports and `jax.devices()` shows ROCm, run a synthetic 100-call IK benchmark with both CPU and ROCm backends to measure the real win.
-3. If wins are real, bake into Dockerfile under a build arg `JAX_BACKEND=rocm|cpu` so users can pick.
-4. If versions force numpy 2.x or break, rollback and document under "won't fix".
+```
+$ pip install jaxlib-0.4.35 jax_rocm60_pjrt-0.4.35 jax_rocm60_plugin-0.4.35
+$ python3 -c "import jax"
+ImportError: libamdhip64.so.6: cannot open shared object file: No such file or directory
+```
 
-### Findings
+### Decision: stay on CPU JAX
 
-(populate as we go)
+- PyRoKi's `/ik` call latency on CPU JAX 0.4.29 was already in the single-digit milliseconds during the cube-stack run (5 successful IK calls in the time it took the LLM to respond once at 3.13s). The wall-clock budget is dominated by the LLM round-trip, not IK.
+- The work needed to make GPU JAX pay off — patching numpy 2.x compatibility through the rest of the stack, and validating robosuite/mink/numba all still work — is much larger than the win. Punt unless a future workload actually batches many IK calls on the critical path.
+
+### What would unblock this
+
+- Either: AMD ships an `jax_rocm7_plugin` for an older JAX (<0.4.30) — unlikely, the rocm-jax repo is moving forward with current main JAX only.
+- Or: cap-x lifts the `jax<0.4.30` upper bound, which they cannot easily do without dropping numpy 1.x compat across the rest of their pyproject.
+- Or: someone vendors ROCm 6 libraries into the base image alongside ROCm 7 (technically possible, very ugly).
+
+None of these are imminent. Revisit if/when AMD's rocm-jax channel publishes a backport for 0.4.x with `jax_rocm7_plugin`.
 
 ---
 
