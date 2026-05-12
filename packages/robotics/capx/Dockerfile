@@ -106,7 +106,8 @@ RUN git clone https://github.com/capgym/cap-x.git /ryzers/cap-x \
 RUN pip3 install --no-cache-dir --break-system-packages --no-deps -e /ryzers/cap-x
 
 COPY test.sh /ryzers/test_capx.sh
-RUN chmod +x /ryzers/test_capx.sh
+COPY demo.sh /ryzers/demo_capx.sh
+RUN chmod +x /ryzers/test_capx.sh /ryzers/demo_capx.sh
 
 # LLM-proxy port (8110) and Web UI port (8200) from the upstream Quick Start.
 EXPOSE 8110

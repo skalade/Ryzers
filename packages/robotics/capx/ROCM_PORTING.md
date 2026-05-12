@@ -94,7 +94,7 @@ These are the units of work for the rest of this document. Each entry is sized s
 | T1-A  | `jax[rocm]` for pyroki (faster IK)                  | not started | see "Tier 1.A" below                                 |
 | T1-B  | SAM3 ROCm/CPU fallback investigation                | not started | see "Tier 1.B" below                                 |
 | T1-C  | LIBERO-PRO support                                  | not started | see "Tier 1.C" below                                 |
-| T1-D  | `--use-oracle-code` (no-LLM) eval mode              | not started | see "Tier 1.D" below                                 |
+| T1-D  | `--use-oracle-code` (no-LLM) eval mode              | DONE        | shipped as `demo.sh` / `ryzers run /ryzers/demo_capx.sh` |
 
 ### Tier 2 — medium effort (multi-dep / build-from-source)
 
@@ -206,24 +206,26 @@ Run LIBERO benchmark tasks (130 task suites) on this image. LIBERO is plain Pyth
 
 ---
 
-## Tier 1.D — `--use-oracle-code` (no-LLM) eval mode
+## Tier 1.D — `--use-oracle-code` (no-LLM) eval mode  [DONE]
 
 ### Goal
 
-Make it possible to validate the sim+IK pipeline without an OpenRouter / vLLM backend, since the current smoke test only checks imports.
-
-### Why it's easy
-
-`capx/envs/launch.py` already accepts `--use-oracle-code True` which bypasses the LLM and runs pre-defined oracle code. We just need to verify it runs to completion on this image and document the invocation.
-
-### Plan
-
-1. Check `env_configs/cube_stack/hillclimb/` and any `oracle_code` blocks in YAML configs to find a config with `use_oracle_code: true` baked in (or know that `--use-oracle-code True` works on the privileged config).
-2. Add an optional `demo.sh` (and `config.yaml` `docker_extra_run_flags` mention) that runs an oracle eval as a "no API key needed" smoke check.
+Make it possible to validate the sim+IK pipeline without an OpenRouter / vLLM backend, since the smoke test only checks imports.
 
 ### Findings
 
-(populate as we go)
+- `franka_robosuite_cube_stack_privileged.yaml` resolves to `FrankaPickPlaceCodeEnv` (`capx/envs/tasks/franka/franka_pick_place.py`), which has `oracle_code = ORACLE_CODE` baked in (line 56). Eight Franka tasks ship with oracle code; r1pro_pickup_radio and r1pro_pickup_trash also do.
+- `python3 capx/envs/launch.py --use-oracle-code True --total-trials 1 --num-workers 1 --record-video False --config-path .../franka_robosuite_cube_stack_privileged.yaml` ran clean, reward 1.0, task completed, **no LLM proxy required**, in 35-37s. `--server-url` is never reached when oracle is on, so an unset key just doesn't matter.
+- Output goes under `<output_dir>/oracle/<task>/...` (capx prefixes with the model name; `oracle` is used when `use_oracle_code` is True).
+
+### What we shipped
+
+- `demo.sh` runs the privileged cube-stack oracle trial; `Dockerfile` copies it to `/ryzers/demo_capx.sh` and `chmod +x`. README documents `ryzers run /ryzers/demo_capx.sh`.
+- This gives us a no-API-key smoke that exercises the full sim + PyRoKi loop, complementing the import-only smoke test.
+
+### Future work
+
+- Could extend `demo.sh` with a `--task` flag to run any of the eight oracle-equipped tasks (lift, nut_assembly, pick_place, spill_wipe, two_arm_lift, two_arm_handover, cube_restack, cube_stack-via-pick_place). Currently fixed to cube_stack.
 
 ---
 

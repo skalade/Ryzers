@@ -13,10 +13,13 @@
 
 ```sh
 ryzers build capx
-ryzers run
+ryzers run                          # smoke test (imports only, ~5s, no GPU traffic)
+ryzers run /ryzers/demo_capx.sh     # oracle-code cube-stack demo (~35s, no API key)
 ```
 
-The default `ryzers run` executes a smoke test that imports `capx`, `torch`, `robosuite`, `mujoco`, `gymnasium`, `transformers`, and `ray` to validate the install.
+`ryzers run` executes a smoke test that imports `capx`, `torch`, `robosuite`, `mujoco`, `gymnasium`, `transformers`, `ray`, `pyroki`, and asserts the uynitsuj-fork-only `skip_render_images` kwarg and numpy 1.x.
+
+`ryzers run /ryzers/demo_capx.sh` runs a **single oracle-code trial** of the Robosuite Franka cube-stack task end-to-end (PyRoKi server + sim + privileged controller), with no LLM proxy or API key required. Expect reward 1.0 / task completed in ~35s on a warm cache.
 
 ## ROCm vs upstream CUDA
 
