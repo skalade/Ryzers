@@ -29,6 +29,14 @@ RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
 # (no uv, no editable submodules). The CUDA-only optional extras --
 # sam3, nvidia-curobo, contact_graspnet_pytorch, flash-attn, vllm, verl --
 # are intentionally skipped.
+#
+# CRITICAL: this install is split into three steps to keep torch on the
+# ROCm build. When pip resolves everything in one transaction, it replaces
+# the base image's `torch==2.10.0+rocm7.2.2.lw.git40d237bf` with a vanilla
+# CUDA `torch==2.8.0+cu128` from PyPI -- presumably because the local
+# version specifier (`+rocm...lw...`) trips up the resolver. Splitting the
+# install means each transaction sees torch as already-satisfying, and the
+# resolver leaves it alone. Confirmed by sandbox tests on this image.
 RUN pip3 install --no-cache-dir --break-system-packages \
     "numpy<2" \
     "numba" \
@@ -57,7 +65,6 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     "mediapy>=1.2.5" \
     "uvicorn" \
     "fastapi" \
-    "transformers<5.0" \
     "openai" \
     "pyrender" \
     "opencv-python-headless<4.13" \
@@ -65,6 +72,16 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     "cloudpickle" \
     "open3d" \
     "PyOpenGL>=3.1.7"
+
+# Install transformers and accelerate as a separate pip transaction so the
+# resolver doesn't re-fetch torch (see comment above).
+# transformers>=5.0 is the floor that exposes Sam3Model/Sam3Processor for our
+# launch_sam3_server.py replacement; accelerate is needed for from_pretrained
+# device dispatch on the SAM3 path.
+RUN pip3 install --no-cache-dir --break-system-packages \
+    "transformers>=5.0,<6" \
+ && pip3 install --no-cache-dir --break-system-packages \
+    "accelerate>=0.30"
 
 # Install the CaP-X fork of robosuite (uynitsuj/robosuite), which adds the
 # `skip_render_images=` kwarg on MujocoEnv.step that capx.envs.simulators
@@ -105,12 +122,30 @@ RUN git clone https://github.com/capgym/cap-x.git /ryzers/cap-x \
 # runtime deps were installed explicitly above.
 RUN pip3 install --no-cache-dir --break-system-packages --no-deps -e /ryzers/cap-x
 
+# Replace the upstream CUDA-only SAM3 perception server with our HuggingFace-
+# transformers-based ROCm shim. Upstream ships
+# `capx/serving/launch_sam3_server.py` which imports from `sam3` -- a Max-Fu
+# fork that builds CUDA C++ extensions and is impossible to install on ROCm.
+#
+# Our replacement uses pure-PyTorch transformers models for both endpoints:
+#   /segment        -> transformers.Sam3Model         (text-prompt segmentation)
+#   /segment_point  -> transformers.Sam2Model         (point-prompt segmentation)
+#
+# Same JSON I/O contract, same port (8114), so capx/integrations/vision/sam3.py
+# and the upstream YAML configs that reference launch_sam3_server.main work
+# unchanged. SAM3 weights (`facebook/sam3`) are HF-gated; users must
+# `huggingface-cli login` (or set HF_TOKEN) before `/segment` will load.
+# `/segment_point` uses ungated SAM2 weights and works out of the box.
+COPY launch_sam3_server.py /ryzers/cap-x/capx/serving/launch_sam3_server.py
+
 COPY test.sh /ryzers/test_capx.sh
 COPY demo.sh /ryzers/demo_capx.sh
-RUN chmod +x /ryzers/test_capx.sh /ryzers/demo_capx.sh
+COPY demo_sam3.sh /ryzers/demo_sam3_capx.sh
+RUN chmod +x /ryzers/test_capx.sh /ryzers/demo_capx.sh /ryzers/demo_sam3_capx.sh
 
-# LLM-proxy port (8110) and Web UI port (8200) from the upstream Quick Start.
+# LLM-proxy port (8110), Web UI port (8200), and SAM3-on-ROCm shim (8114).
 EXPOSE 8110
 EXPOSE 8200
+EXPOSE 8114
 
 CMD /ryzers/test_capx.sh

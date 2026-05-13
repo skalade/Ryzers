@@ -46,14 +46,26 @@ import transformers, ray, fastapi, viser, trimesh
 print(f"transformers version: {transformers.__version__}")
 print(f"ray version: {ray.__version__}")
 
-# PyRoKi powers the privileged/oracle perception server profile -- the only
-# api_servers profile that doesn't require CUDA-only SAM3 / Contact-GraspNet.
+# PyRoKi powers the privileged/oracle perception server profile.
 import jax
 import pyroki
 from capx.serving import launch_pyroki_server
 print(f"jax version: {jax.__version__} (devices={jax.devices()})")
 print(f"pyroki loaded from: {pyroki.__file__}")
 print(f"launch_pyroki_server loaded from: {launch_pyroki_server.__file__}")
+
+# T1-B SAM3-on-ROCm shim: cap-x's launch_sam3_server.py is replaced at
+# build time by a HuggingFace transformers-based implementation that runs
+# on ROCm/CPU. Verify the replacement loaded (and not the upstream sam3
+# CUDA fork) by checking the module docstring.
+from capx.serving import launch_sam3_server
+assert "ROCm-compatible" in (launch_sam3_server.__doc__ or ""), (
+    "launch_sam3_server is not the ROCm replacement -- did the COPY in "
+    "the Dockerfile not run?"
+)
+from transformers import Sam3Model, Sam2Model  # noqa: F401
+print(f"launch_sam3_server (ROCm shim) loaded from: {launch_sam3_server.__file__}")
+print("transformers Sam3Model / Sam2Model: OK (weights load on first /segment call)")
 
 import numpy as np
 assert np.__version__.startswith("1."), \

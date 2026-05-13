@@ -67,9 +67,9 @@ Compatible iff the only `_target_` listed is `capx.serving.launch_pyroki_server.
 
 ---
 
-## The seven gotchas we have hit so far
+## The eight gotchas we have hit so far
 
-These are the bugs that cost meaningful time. The smoke test now defends against #2, #3, #4 and the build itself defends against #5.
+These are the bugs that cost meaningful time. The smoke test now defends against #2, #3, #4, the build itself defends against #5 and #8.
 
 | # | Gotcha                                                              | Symptom                                                                 | Fix                                                          |
 |---|---------------------------------------------------------------------|-------------------------------------------------------------------------|--------------------------------------------------------------|
@@ -79,7 +79,8 @@ These are the bugs that cost meaningful time. The smoke test now defends against
 | 4 | Vanilla robosuite from PyPI                                         | `TypeError: MujocoEnv.step() got unexpected kwarg 'skip_render_images'` | Install uynitsuj/robosuite fork                              |
 | 5 | Robosuite fork pulls `mink>=1.0`, which forces numpy 2.x            | `numpy must stay on 1.x for robosuite/mink compatibility, got 2.4.4`    | Install fork with `--no-deps`; add `numba`, `termcolor`      |
 | 6 | JAX `>=0.4.30` requires numpy 2.x; pyroki has no upper bound        | numpy gets force-upgraded                                               | Pin `jax<0.4.30, jaxlib<0.4.30` (matches upstream override)  |
-| 7 | Default config tries to start three perception servers              | `ModuleNotFoundError: No module named 'sam3' / pyroki / ...`            | Use a `_privileged.yaml` config; only PyRoKi is shipped here |
+| 7 | Default config tries to start three perception servers              | `ModuleNotFoundError: No module named 'sam3' / pyroki / ...`            | Use `_privileged.yaml` (PyRoKi only) or `launch_sam3_server` overlay (T1-B) |
+| 8 | Bundled pip install of transformers/accelerate evicts ROCm torch    | `torch==2.8.0+cu128`, `torchvision::nms does not exist` at SAM3 import  | Split pip install: bulk deps; then transformers; then accelerate (separate transactions) |
 
 ---
 
@@ -92,7 +93,7 @@ These are the units of work for the rest of this document. Each entry is sized s
 | ID    | Item                                                | Status      | Pointer                                              |
 |-------|-----------------------------------------------------|-------------|------------------------------------------------------|
 | T1-A  | `jax[rocm]` for pyroki (faster IK)                  | NOT FEASIBLE TODAY | see "Tier 1.A" below — version conflict with ROCm 7.2  |
-| T1-B  | SAM3 ROCm/CPU fallback investigation                | not started | see "Tier 1.B" below                                 |
+| T1-B  | SAM3 ROCm/CPU fallback investigation                | DONE        | shim ships `launch_sam3_server.py` overlay using HF transformers Sam3+Sam2 |
 | T1-C  | LIBERO-PRO support                                  | DEFERRED    | blocked on T1-B; every shipped libero YAML needs SAM3+GraspNet too |
 | T1-D  | `--use-oracle-code` (no-LLM) eval mode              | DONE        | shipped as `demo.sh` / `ryzers run /ryzers/demo_capx.sh` |
 
@@ -160,31 +161,57 @@ None of these are imminent. Revisit if/when AMD's rocm-jax channel publishes a b
 
 ---
 
-## Tier 1.B — SAM3 ROCm fallback
+## Tier 1.B — SAM3 ROCm fallback  [DONE]
 
 ### Goal
 
-See if SAM3 (or a ROCm-friendly equivalent) can be made to run as the visual-grounding perception server, unlocking the default cube-stack config and other SAM3-using YAMLs.
-
-### What SAM3 actually is
-
-[SAM3](https://github.com/facebookresearch/sam3) is Meta's "Segment Anything 3" — a point/box/text-prompted segmentation model. cap-x uses Max-Fu's fork (`https://github.com/Max-Fu/sam3`) which adds a few cap-x-specific entry points. The CUDA build is in the SAM3 wrapper around the model's transformer; the underlying ViT itself is plain PyTorch.
-
-### Hypotheses to test
-
-1. **PyTorch-only SAM3 path.** Maybe the CUDA C++ extensions are an *optimization*, not a requirement. Many SAM-family repos build a CUDA-fast attention kernel but fall back to plain torch SDPA on import failure. If that's true, we can install Max-Fu/sam3 with `setup.py` flags to skip the CUDA build (e.g. `SAM3_NO_CUDA=1`) and still get a working server, just slower.
-2. **Drop-in alternative.** If (1) doesn't pan out, swap `launch_sam3_server.py` for a tiny FastAPI shim that calls vanilla SAM2 / mobile-SAM (already a Ryzer in `packages/vision/mobilesam`) over the same `/segment` endpoint signature. This is a cap-x patch, not a SAM3 port.
-3. **OpenCLIP + bbox grounding.** Some configs only need text-prompted segmentation; CLIP-based methods on ROCm work today (see `packages/vision/dinov3`).
-
-### Plan
-
-1. Read `Max-Fu/sam3/setup.py` and `capx/serving/launch_sam3_server.py` to find the import path. Specifically look for `try: import _sam3_cuda except: ...` patterns.
-2. Try building Max-Fu/sam3 with `--no-build-isolation` and a flag that forces CPU. Expected to fail.
-3. If (2) fails, prototype the FastAPI shim approach. It only needs to handle whatever endpoints `capx.envs.tasks.<task>.get_object_pose` calls in the privileged-vs-non-privileged path.
+Get SAM3-style text-prompt + point-prompt segmentation working on ROCm without the CUDA C++ extensions Max-Fu/sam3 builds at install time. This unlocks the default `franka_robosuite_cube_stack.yaml` and every LIBERO config (which all reference `launch_sam3_server.main`).
 
 ### Findings
 
-(populate as we go)
+The cap-x SAM3 server has an extremely small surface area — only **two endpoints**:
+
+| Endpoint            | Input                                          | Upstream backend                                      |
+|---------------------|------------------------------------------------|-------------------------------------------------------|
+| `POST /segment`       | `{image_base64, text_prompt}`                  | `Max-Fu/sam3.Sam3Processor.set_text_prompt()` (CUDA)  |
+| `POST /segment_point` | `{image_base64, point_coords: [x, y]}`         | `Max-Fu/sam3.Sam3Model.predict_inst()` (CUDA)         |
+
+Both are wrapped in a FastAPI app at `127.0.0.1:8114`. Cap-x's only consumer (`capx/integrations/vision/sam3.py`) just POSTs JSON and parses `mask_base64 / boxes / scores` — there's no client-side dependency on Max-Fu's specific Python API.
+
+So the fix is just to keep the FastAPI app structure but swap the inference engine. HuggingFace `transformers` ships pure-PyTorch Sam3 and Sam2 implementations starting in transformers 5.0:
+
+| Endpoint            | Replacement backend                                  | Weights source                                |
+|---------------------|------------------------------------------------------|-----------------------------------------------|
+| `POST /segment`       | `transformers.Sam3Model` text-prompt segmentation    | `facebook/sam3` (HF-gated; needs HF auth)     |
+| `POST /segment_point` | `transformers.Sam2Model` point-prompt segmentation   | `facebook/sam2.1-hiera-large` (NOT gated)     |
+
+(HF transformers Sam3 doesn't expose a point-prompt API in the same way Max-Fu's fork does, so we delegate `/segment_point` to Sam2 — which has fully featured point prompts. cap-x only uses point prompts for grasp candidate generation, so any SAM that takes a click and returns a mask works.)
+
+### What we shipped
+
+1. **`packages/robotics/capx/launch_sam3_server.py`** — drop-in FastAPI app implementing both endpoints with transformers Sam3+Sam2. Module docstring starts with "ROCm-compatible drop-in replacement..." so the smoke test can assert this file (and not the upstream CUDA fork) is what got loaded.
+2. **`Dockerfile` overlay** — `COPY launch_sam3_server.py /ryzers/cap-x/capx/serving/launch_sam3_server.py` after the editable cap-x install so the upstream YAML configs (`_target_: capx.serving.launch_sam3_server.main`) bind to our shim with no config changes.
+3. **`Dockerfile` install split** — pip install is now in three transactions instead of one. Reason: when ALL deps go through pip's resolver in a single transaction, the base image's torch (with the local-version `+rocm7.2.2.lw.git40d237bf` PEP 440 tag) gets evicted in favour of `torch==2.8.0+cu128` from PyPI. Splitting (bulk deps; transformers; accelerate) avoids this. Sandbox-confirmed both reproduction and fix.
+4. **`packages/robotics/capx/demo_sam3.sh`** — start the shim, ping `/health`, run `/segment_point` against a 96×96 synthetic image (no auth needed), and optionally exercise `/segment` if `HF_TOKEN` is set.
+5. **`test.sh`** — additional asserts that the loaded `launch_sam3_server.__doc__` contains "ROCm-compatible" (so the COPY overlay is verified at smoke-test time) and that `Sam3Model` / `Sam2Model` import.
+
+### Verified
+
+- `ryzers run /ryzers/test_capx.sh` → all assertions pass; transformers 5.8.0; torch 2.10.0+rocm7.2.2; numpy 1.26.4.
+- `ryzers run /ryzers/demo_capx.sh` → privileged cube-stack oracle eval still passes (T1-D regression OK).
+- `ryzers run /ryzers/demo_sam3_capx.sh` (no HF_TOKEN) → `/health` reports the shim is loaded; `/segment_point` returns 3 masks for a synthetic bright square (top score 0.985, masks_shape `[3, 64, 64]`).
+- (Not tested in this session: `/segment` text-prompt path, since it requires accepting the SAM3 license on HF and `huggingface-cli login`. The shim's lazy-load + descriptive 503 error makes it diagnose-friendly when weights are missing.)
+
+### Gotchas to remember
+
+- **transformers 5.x must be installed in its own pip transaction.** Bundling it with the bulk install caused pip to evict the base-image torch and replace it with a non-ROCm CUDA wheel (gotcha #8 in this doc's gotcha table; sandbox-reproducible).
+- **`accelerate` likewise.** The Sam3 `from_pretrained` chain uses accelerate's device dispatch; without it Sam3Model imports fine but `.to(_DEVICE)` can hit a missing-meta-device path on some weight shards.
+- **`launch_sam3_server.py` must use a triple-quoted docstring**, not `#` comments, for the smoke test's `__doc__` assertion to work.
+- **`facebook/sam3` is gated**; users must accept the license at https://huggingface.co/facebook/sam3 and `huggingface-cli login` (or pass `HF_TOKEN`) before `/segment` will load. `/segment_point` works without auth because Sam2 weights are open.
+
+### Eighth gotcha — add to the table
+
+| 8 | Bundled pip transaction with transformers/accelerate | torch silently replaced with `2.8.0+cu128` (CUDA, CPU-only) | Split pip install into three transactions: bulk deps, transformers, accelerate |
 
 ---
 
