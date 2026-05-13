@@ -35,7 +35,9 @@ The default `ryzers build capx` produces an image that runs **multi-trial cap-x 
 
 ### Concrete benchmark numbers from this Ryzer
 
-`ryzers run /ryzers/bench_capx.sh` (7 Robosuite tasks, 3 trials each, oracle-code, no API key):
+#### Oracle baseline (no LLM, no API key)
+
+`ryzers run /ryzers/bench_capx.sh` (7 Robosuite tasks, 3 trials each, oracle-code):
 
 | task              | success | wall      |
 |-------------------|---------|-----------|
@@ -47,6 +49,30 @@ The default `ryzers build capx` produces an image that runs **multi-trial cap-x 
 | **total**         | **14/17** | **2m 41s** |
 
 Spread matches what cap-x's authors report — simple top-down manipulations work reliably, multi-arm/threaded tasks have lower oracle success rates.
+
+#### LLM bake-off (3 trials per cell, openrouter proxy, 4 tasks × 3 models)
+
+Driven through `capx/serving/openrouter_server.py` on port 8110 with an OpenRouter API key, so the same `--server-url http://127.0.0.1:8110/chat/completions` works for any model. ROCm side ran on a Ryzen AI iGPU (gfx11.0.0 override). All trials used the privileged YAML configs; PyRoKi was the only perception server.
+
+Wall-time per task is roughly 25-50s for 3 trials, dominated by LLM API latency:
+
+| task             | oracle (3 trials) | gpt-4o-mini      | claude-3.5-haiku | gemini-2.5-flash |
+|------------------|-------------------|------------------|------------------|------------------|
+| cube_stack       | 3/3               | 3/3 (1.000)      | 3/3 (1.000)      | 3/3 (1.000)      |
+| cube_lifting     | 3/3               | 1/3 (0.700)      | 3/3 (1.000)      | 3/3 (1.000)      |
+| nut_assembly     | 2/3               | 0/3 (0.153)      | 0/3 (0.063)      | 2/3 (0.667)      |
+| spill_wipe       | 3/3               | 1/3 (0.933)      | 0/3 (0.000) [a]  | 2/3 (0.883)      |
+| **success/12**   | **11/12 (92%)**   | **5/12 (42%)**   | **6/12 (50%)**   | **10/12 (83%)**  |
+
+Numbers are `success/3 (avg_reward)`. [a] claude-3.5-haiku's spill_wipe trials all returned `sandboxrc=1` — runtime error in the generated code. Inspecting `code.py` showed the model started its response with `Here's the Python code to wipe up the brown spill:` *as a literal first line* of the code block, which is a `SyntaxError`. cap-x's prompt requires strict code-only output and haiku didn't follow it. Not a manipulation failure, a prompt-following failure. gpt-4o-mini and gemini-2.5-flash both followed the instruction correctly.
+
+Things this experiment teaches us:
+
+1. **An LLM can match the oracle baseline.** gemini-2.5-flash (10/12) is within one trial of the oracle (11/12). If the oracle is the upper bound, then "good enough" LLMs are close to it on these privileged-config tasks.
+2. **Model choice matters per-task.** claude-haiku aces cube_lifting where gpt-4o-mini fails twice (the gpt-4o-mini code does `goto_pose -> goto_pose -> close_gripper` instead of `goto_pose_above -> goto_pose_grasp -> close_gripper -> lift`). Different models have different grasp-sequencing biases.
+3. **cap-x's harness is sensitive to prompt-following.** Models that prefix prose, fence with markdown, or otherwise deviate from "executable Python only" get sandboxrc=1 for free, regardless of whether the underlying logic is sound.
+4. **Cost is negligible.** 36 total trials in this experiment, each making 1 LLM call (no multi-turn). Total OpenRouter spend was well under $0.50 on these tier-0 models. cap-x at this scale is "lunch-money" cheap.
+5. **Wall time is LLM-bound, not sim-bound.** Simulator+IK accounts for ~5-10s of each ~10-15s trial; the rest is one LLM round-trip. Switching to a local LLM (T2-A) would noticeably speed up multi-trial runs.
 
 ---
 
