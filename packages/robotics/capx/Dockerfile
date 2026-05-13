@@ -141,7 +141,8 @@ COPY launch_sam3_server.py /ryzers/cap-x/capx/serving/launch_sam3_server.py
 COPY test.sh /ryzers/test_capx.sh
 COPY demo.sh /ryzers/demo_capx.sh
 COPY demo_sam3.sh /ryzers/demo_sam3_capx.sh
-RUN chmod +x /ryzers/test_capx.sh /ryzers/demo_capx.sh /ryzers/demo_sam3_capx.sh
+COPY bench.sh /ryzers/bench_capx.sh
+RUN chmod +x /ryzers/test_capx.sh /ryzers/demo_capx.sh /ryzers/demo_sam3_capx.sh /ryzers/bench_capx.sh
 
 # LLM-proxy port (8110), Web UI port (8200), and SAM3-on-ROCm shim (8114).
 EXPOSE 8110

@@ -13,9 +13,10 @@
 
 ```sh
 ryzers build capx
-ryzers run                                # smoke test (imports only, ~5s, no GPU traffic)
-ryzers run /ryzers/demo_capx.sh           # oracle-code cube-stack demo (~35s, no API key)
-ryzers run /ryzers/demo_sam3_capx.sh      # SAM3-on-ROCm shim smoke (~30s, no HF auth needed)
+ryzers run                                  # smoke test (imports only, ~5s, no GPU traffic)
+ryzers run /ryzers/demo_capx.sh             # oracle-code cube-stack demo (~35s, no API key)
+ryzers run /ryzers/demo_sam3_capx.sh        # SAM3-on-ROCm shim smoke (~30s, no HF auth needed)
+ryzers run /ryzers/bench_capx.sh            # multi-task benchmark, 7 tasks x 3 trials (~3m, no API key)
 ```
 
 `ryzers run` executes a smoke test that imports `capx`, `torch`, `robosuite`, `mujoco`, `gymnasium`, `transformers`, `ray`, `pyroki`, and asserts the uynitsuj-fork-only `skip_render_images` kwarg and numpy 1.x.
@@ -23,6 +24,24 @@ ryzers run /ryzers/demo_sam3_capx.sh      # SAM3-on-ROCm shim smoke (~30s, no HF
 `ryzers run /ryzers/demo_capx.sh` runs a **single oracle-code trial** of the Robosuite Franka cube-stack task end-to-end (PyRoKi server + sim + privileged controller), with no LLM proxy or API key required. Expect reward 1.0 / task completed in ~35s on a warm cache.
 
 `ryzers run /ryzers/demo_sam3_capx.sh` starts the SAM3-on-ROCm shim and runs a `/segment_point` round-trip against synthetic data using ungated SAM2 weights. Set `HF_TOKEN=...` to also exercise the gated SAM3 `/segment` text-prompt endpoint.
+
+`ryzers run /ryzers/bench_capx.sh` runs a real multi-task CaP-X benchmark on the seven Robosuite tasks whose privileged configs are PyRoKi-only (cube_stack, cube_lifting, cube_restack, nut_assembly, spill_wipe, two_arm_lift, two_arm_handover). Defaults to 3 trials/task, ~3 min wall time, no API key required. Override with `TRIALS=N` or `TASKS=cube_stack,nut_assembly`.
+
+### Real benchmark numbers we got
+
+Captured on 2026-05-12 from a single `bench_capx.sh` run on a Ryzen AI iGPU
+with `HSA_OVERRIDE_GFX_VERSION=11.0.0`, oracle-code, no LLM:
+
+| task              | success | wall      | notes                                |
+|-------------------|---------|-----------|--------------------------------------|
+| cube_stack        | 5/5     | 39.5s     | 5-trial run                          |
+| cube_lifting      | 3/3     | 10.8s     | simplest task                        |
+| nut_assembly      | 2/3     | 16.1s     | one trial got reward 0.0004          |
+| spill_wipe        | 3/3     | 14.3s     |                                      |
+| two_arm_handover  | 1/3     | 59.3s     | hardest task; oracle is partial      |
+| **total**         | **14/17** | **2m 41s** |                                    |
+
+These match the spread cap-x's authors report upstream — simple top-down manipulations are reliable, two-arm coordination and threaded nut assembly are not, oracle code is not deterministic across initial seeds. Use this as the no-API-key baseline before any LLM run.
 
 ## ROCm vs upstream CUDA
 
@@ -41,9 +60,10 @@ CaP-X targets CUDA-only NVIDIA GPUs upstream and installs via `uv sync`, which w
 What you can run on this image:
 
 - The CaP-X coding-agent harness (`capx/envs/launch.py`) against any config whose `api_servers` block uses only `capx.serving.launch_pyroki_server.main` and/or `capx.serving.launch_sam3_server.main` (with HF auth for SAM3 weights). That includes:
-  - All `*_privileged.yaml` configs (PyRoKi only).
-  - The default `franka_robosuite_cube_stack.yaml` and the LIBERO configs that combine PyRoKi + SAM3 (provided you've accepted the SAM3 license on HF and `huggingface-cli login`).
-- Robosuite single-turn benchmarks via `env_configs/cube_stack/franka_robosuite_cube_stack_privileged.yaml` (and similar privileged configs in other task dirs).
+  - **All seven Robosuite `*_privileged.yaml` configs** (PyRoKi only) — cube_stack, cube_lifting, cube_restack, nut_assembly, spill_wipe, two_arm_lift, two_arm_handover. Confirmed working end-to-end with oracle code; works with any OpenAI-compatible LLM via `--server-url`.
+  - **All eight `human_oracle_code/*_privileged_oracle.yaml` configs** (oracle-code variants of those tasks plus one LIBERO task).
+  - The default `franka_robosuite_cube_stack.yaml` and similar SAM3-using configs (PyRoKi + SAM3) — the SAM3-on-ROCm shim from `launch_sam3_server.py` covers it; you only need `huggingface-cli login` for the gated SAM3 weights.
+- Robosuite single-turn benchmarks via the `bench_capx.sh` runner.
 - The interactive Web UI on port 8200.
 - The OpenRouter / vLLM LLM proxies under `capx/serving/`.
 - The SAM3-on-ROCm perception shim on port 8114 (text-prompt + point-prompt segmentation, pure PyTorch).

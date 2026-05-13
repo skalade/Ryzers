@@ -8,7 +8,7 @@ It is intentionally written to outlast the chat session that produced it. New ex
 
 ## TL;DR — What works today
 
-The default `ryzers build capx` produces an image that runs the **privileged** Robosuite cube-stack eval end-to-end on ROCm:
+The default `ryzers build capx` produces an image that runs **multi-trial cap-x benchmarks** end-to-end on ROCm:
 
 | Component                                   | Status     | Notes                                                                                       |
 |---------------------------------------------|------------|---------------------------------------------------------------------------------------------|
@@ -18,8 +18,35 @@ The default `ryzers build capx` produces an image that runs the **privileged** R
 | `mujoco` (3.8.x, EGL backend)               | works      | `MUJOCO_GL=egl`, `PYOPENGL_PLATFORM=egl`                                                    |
 | `pyroki` (CPU JAX 0.4.29)                   | works      | answers `/ik` and `/plan` over HTTP; ~30s URDF cold-start                                   |
 | `capx.serving.launch_pyroki_server`         | works      | bound port 8116                                                                             |
+| `capx.serving.launch_sam3_server` (T1-B)    | works      | HF transformers Sam3 + Sam2 shim on port 8114; verified `/segment_point` with no HF auth    |
 | `openrouter_server` LLM proxy (port 8110)   | works      | tested with `openai/gpt-4o-mini` against OpenRouter                                         |
-| Robosuite Franka cube-stack 1-trial eval    | works      | `franka_robosuite_cube_stack_privileged.yaml` — gpt-4o-mini one-shot, reward 1.0 in ~44s    |
+| Robosuite Franka cube-stack 1-trial eval    | works      | gpt-4o-mini, reward 1.0 in ~44s on `franka_robosuite_cube_stack_privileged.yaml`            |
+| **Multi-task oracle benchmark**             | **works**  | 7 Robosuite tasks runnable; 14/17 trials succeed; ~2m41s wall (3 trials/task, see below)    |
+
+### Configs runnable on ROCm today (16 of 17 privileged configs)
+
+| Config family                                           | api_servers needed                              | Status on ROCm                                |
+|---------------------------------------------------------|-------------------------------------------------|-----------------------------------------------|
+| `env_configs/<robosuite_task>/*_privileged.yaml` (×7)    | PyRoKi                                          | works -- LLM-driven via `--server-url`        |
+| `env_configs/human_oracle_code/robosuite/*.yaml` (×7)    | PyRoKi                                          | works -- no LLM (oracle code)                 |
+| `env_configs/human_oracle_code/libero/*.yaml` (×1)       | PyRoKi                                          | works -- no LLM (oracle code)                 |
+| `env_configs/libero/franka_libero_spatial_0_privileged.yaml` | PyRoKi + SAM3 + Contact-GraspNet            | **blocked on T3-A** (Contact-GraspNet)        |
+| `env_configs/cube_stack/franka_robosuite_cube_stack.yaml` (default) and similar SAM3+GraspNet configs | PyRoKi + SAM3 + Contact-GraspNet | **partly unblocked**: SAM3 done (T1-B), still blocked on Contact-GraspNet |
+
+### Concrete benchmark numbers from this Ryzer
+
+`ryzers run /ryzers/bench_capx.sh` (7 Robosuite tasks, 3 trials each, oracle-code, no API key):
+
+| task              | success | wall      |
+|-------------------|---------|-----------|
+| cube_stack        | 5/5     | 39.5s     |
+| cube_lifting      | 3/3     | 10.8s     |
+| nut_assembly      | 2/3     | 16.1s     |
+| spill_wipe        | 3/3     | 14.3s     |
+| two_arm_handover  | 1/3     | 59.3s     |
+| **total**         | **14/17** | **2m 41s** |
+
+Spread matches what cap-x's authors report — simple top-down manipulations work reliably, multi-arm/threaded tasks have lower oracle success rates.
 
 ---
 
