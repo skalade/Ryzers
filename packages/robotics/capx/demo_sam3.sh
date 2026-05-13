@@ -14,6 +14,11 @@
 # Optional: to also exercise /segment (text-prompt SAM3 segmentation), set
 # HF_TOKEN to a HuggingFace token that has accepted the
 # https://huggingface.co/facebook/sam3 license.
+#
+# For low-contrast scenes (e.g. spill_wipe's 'brown spill' on a wood-grain
+# table) export SAM3_THRESHOLD=0.1 to lower SAM3's instance-segmentation
+# confidence floor. Default is 0.5, which suffices for high-contrast
+# objects like 'red cube' / 'green cube' on the cube_stack scene.
 
 set -euo pipefail
 

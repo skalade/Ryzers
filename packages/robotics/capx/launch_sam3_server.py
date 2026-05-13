@@ -61,6 +61,13 @@ _LOAD_LOCK = threading.Lock()
 _SAM3_MODEL_NAME = os.environ.get("SAM3_MODEL", "facebook/sam3")
 _SAM2_MODEL_NAME = os.environ.get("SAM2_MODEL", "facebook/sam2.1-hiera-large")
 
+# SAM3's instance-segmentation post-processor needs a confidence threshold.
+# Upstream uses 0.5 by default; on robosuite's synthetic / low-contrast scenes
+# (e.g. "brown spill" on a wood-grain table) the right value is lower. Expose
+# it as an env var so workloads can tune without rebuilding.
+_SAM3_THRESHOLD = float(os.environ.get("SAM3_THRESHOLD", "0.5"))
+_SAM3_MASK_THRESHOLD = float(os.environ.get("SAM3_MASK_THRESHOLD", "0.5"))
+
 # Lazy holders -- loaded on first call, then cached for the process lifetime.
 _SAM3: dict[str, Any] | None = None
 _SAM2: dict[str, Any] | None = None
@@ -202,8 +209,8 @@ def _do_segment(pil_image: Image.Image, text_prompt: str) -> SegmentResponse:
         target_sizes = target_sizes.tolist()
     results_list = processor.post_process_instance_segmentation(
         outputs,
-        threshold=0.5,
-        mask_threshold=0.5,
+        threshold=_SAM3_THRESHOLD,
+        mask_threshold=_SAM3_MASK_THRESHOLD,
         target_sizes=target_sizes,
     )
     if not results_list:

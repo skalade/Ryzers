@@ -50,7 +50,7 @@ CaP-X targets CUDA-only NVIDIA GPUs upstream and installs via `uv sync`, which w
 - **Base image:** `rocm/pytorch` (Python 3.12, PyTorch 2.10 with ROCm 7.2). The base image's PyTorch is preserved — there is no separate uv venv that would fetch a CUDA wheel from PyPI.
 - **Install method:** plain `pip3` for the runtime deps that have wheels (`gymnasium`, `mujoco`, `robosuite`, `transformers>=5`, `ray`, `fastapi`, `viser`, `trimesh`, `open3d`, `pyrender`, `pyroki`, etc.) and an editable `pip install --no-deps -e cap-x` so `import capx` works against the cloned source tree. The pip install is split into staged transactions to keep pip's resolver from replacing the ROCm torch with a vanilla CUDA torch from PyPI.
 - **PyRoKi (IK perception server) is installed** — pure-Python/JAX, runs on CPU JAX. We pin `jax<0.4.30, jaxlib<0.4.30` to keep numpy on 1.x for robosuite/mink compatibility (matches upstream's `[tool.uv]` overrides).
-- **SAM3 perception server is replaced** with a HuggingFace-transformers-based shim (`packages/robotics/capx/launch_sam3_server.py`) that overlays `capx/serving/launch_sam3_server.py` at build time. The shim exposes the same `/segment` and `/segment_point` endpoints on port 8114, but routes to `transformers.Sam3Model` (text-prompt) and `transformers.Sam2Model` (point-prompt) — both pure PyTorch, ROCm-compatible, no CUDA C++ extensions. SAM3 weights (`facebook/sam3`) are HF-gated and require `huggingface-cli login` (or `HF_TOKEN`) to download; SAM2 weights are not gated.
+- **SAM3 perception server is replaced** with a HuggingFace-transformers-based shim (`packages/robotics/capx/launch_sam3_server.py`) that overlays `capx/serving/launch_sam3_server.py` at build time. The shim exposes the same `/segment` and `/segment_point` endpoints on port 8114, but routes to `transformers.Sam3Model` (text-prompt) and `transformers.Sam2Model` (point-prompt) — both pure PyTorch, ROCm-compatible, no CUDA C++ extensions. SAM3 weights (`facebook/sam3`) are HF-gated and require `huggingface-cli login` (or `HF_TOKEN`) to download; SAM2 weights are not gated. The shim accepts `SAM3_THRESHOLD` and `SAM3_MASK_THRESHOLD` env vars (default 0.5) for tuning detection sensitivity on low-contrast scenes — `SAM3_THRESHOLD=0.1` is what makes the `spill_wipe` non-privileged tier work.
 - **Skipped on purpose** (still CUDA-only or NVIDIA-only):
   - `nvidia-curobo`, `contact_graspnet_pytorch`, `flash-attn`, `vllm`, `verl`, the `molmo` extra
   - The `b1k`/Isaac-Sim BEHAVIOR backend
@@ -59,28 +59,32 @@ CaP-X targets CUDA-only NVIDIA GPUs upstream and installs via `uv sync`, which w
 
 What you can run on this image:
 
-- The CaP-X coding-agent harness (`capx/envs/launch.py`) against any config whose `api_servers` block uses only `capx.serving.launch_pyroki_server.main` and/or `capx.serving.launch_sam3_server.main` (with HF auth for SAM3 weights). That includes:
-  - **All seven Robosuite `*_privileged.yaml` configs** (PyRoKi only) — cube_stack, cube_lifting, cube_restack, nut_assembly, spill_wipe, two_arm_lift, two_arm_handover. Confirmed working end-to-end with oracle code; works with any OpenAI-compatible LLM via `--server-url`.
-  - **All eight `human_oracle_code/*_privileged_oracle.yaml` configs** (oracle-code variants of those tasks plus one LIBERO task).
-  - The default `franka_robosuite_cube_stack.yaml` and similar SAM3-using configs (PyRoKi + SAM3) — the SAM3-on-ROCm shim from `launch_sam3_server.py` covers it; you only need `huggingface-cli login` for the gated SAM3 weights.
-- Robosuite single-turn benchmarks via the `bench_capx.sh` runner.
+- **PyRoKi-only tier (16 configs, fully verified end-to-end):**
+  - All seven Robosuite `*_privileged.yaml` configs — cube_stack, cube_lifting, cube_restack, nut_assembly, spill_wipe, two_arm_lift, two_arm_handover. Works with oracle code (`bench_capx.sh`) and with any OpenAI-compatible LLM via `--server-url`.
+  - All eight `human_oracle_code/*_privileged_oracle.yaml` configs (oracle-code variants plus one LIBERO task).
+- **PyRoKi + SAM3 tier (partial, requires HF auth):** the `spill_wipe`, `two_arm_handover` task families (~14 configs) are unblocked because their env classes (`spill_wipe.py`, `handover.py`) call SAM3 directly without molmo. Verified end-to-end on `spill_wipe_oracle.yaml` with `HF_TOKEN` set and `SAM3_THRESHOLD=0.1`. Reward stays low for non-privileged tiers — that's the inherent perception-tier difficulty cap-x is designed to measure, not a porting artifact.
+- The CaP-X coding-agent harness (`capx/envs/launch.py`) against any of the above.
+- Robosuite single-turn benchmarks via the `bench_capx.sh` runner (oracle-code, PyRoKi-only tier).
 - The interactive Web UI on port 8200.
 - The OpenRouter / vLLM LLM proxies under `capx/serving/`.
 - The SAM3-on-ROCm perception shim on port 8114 (text-prompt + point-prompt segmentation, pure PyTorch).
 
 What will *not* work on this image:
 
-- Any config whose `api_servers` references `launch_contact_graspnet_server` (e.g. the multi-turn VDM `*_reduced_api*.yaml` variants). Contact-GraspNet has CUDA C++ extensions and is not ported.
+- The `nut_assembly` SAM3+PyRoKi tier (~6 configs). Despite only listing SAM3+PyRoKi in `api_servers`, the underlying `nut_assembly_visual.py` calls `init_molmo()` which expects a vLLM server at `127.0.0.1:8122`. Blocked on T2-A (local LLM backend) + T3-B (molmo extra).
+- Any config whose `api_servers` references `launch_contact_graspnet_server` (e.g. the default `franka_robosuite_cube_stack.yaml`, all multi-turn VDM `*_reduced_api*.yaml` variants, and most LIBERO configs). Contact-GraspNet has CUDA C++ extensions and is not ported. See `ROCM_PORTING.md` Tier 3.A for the recommended heuristic-grasp shim approach.
 - LIBERO-PRO and BEHAVIOR task suites — see `ROCM_PORTING.md` Tier 1.C and 3 for status.
 - The `verl`-based RL training pipeline (`docs/rl-training.md`) — depends on `vllm` and `flash-attn` CUDA wheels.
 
 To check whether a config is ROCm-compatible:
 
 ```sh
+# 1. api_servers gate: must list only PyRoKi and/or SAM3, never Contact-GraspNet.
 grep -A1 _target_ env_configs/<task>/<config>.yaml
-# `_target_` should list only: capx.serving.launch_pyroki_server.main
-#                              and/or capx.serving.launch_sam3_server.main
-# Anything mentioning `launch_contact_graspnet_server` will not work today.
+
+# 2. molmo gate: env class for SAM3-using configs must NOT use molmo.
+grep -l "init_molmo" capx/integrations/franka/*.py
+# Configs whose `env._target_` resolves to a file in this list need T2-A/T3-B.
 ```
 
 ## Running an Evaluation

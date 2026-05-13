@@ -18,20 +18,39 @@ The default `ryzers build capx` produces an image that runs **multi-trial cap-x 
 | `mujoco` (3.8.x, EGL backend)               | works      | `MUJOCO_GL=egl`, `PYOPENGL_PLATFORM=egl`                                                    |
 | `pyroki` (CPU JAX 0.4.29)                   | works      | answers `/ik` and `/plan` over HTTP; ~30s URDF cold-start                                   |
 | `capx.serving.launch_pyroki_server`         | works      | bound port 8116                                                                             |
-| `capx.serving.launch_sam3_server` (T1-B)    | works      | HF transformers Sam3 + Sam2 shim on port 8114; verified `/segment_point` with no HF auth    |
+| `capx.serving.launch_sam3_server` (T1-B)    | works      | HF transformers Sam3 + Sam2 shim on port 8114; `/segment_point` (no auth) and `/segment` (with HF auth) both verified end-to-end |
 | `openrouter_server` LLM proxy (port 8110)   | works      | tested with `openai/gpt-4o-mini` against OpenRouter                                         |
 | Robosuite Franka cube-stack 1-trial eval    | works      | gpt-4o-mini, reward 1.0 in ~44s on `franka_robosuite_cube_stack_privileged.yaml`            |
 | **Multi-task oracle benchmark**             | **works**  | 7 Robosuite tasks runnable; 14/17 trials succeed; ~2m41s wall (3 trials/task, see below)    |
 
-### Configs runnable on ROCm today (16 of 17 privileged configs)
+### Configs runnable on ROCm today
 
-| Config family                                           | api_servers needed                              | Status on ROCm                                |
-|---------------------------------------------------------|-------------------------------------------------|-----------------------------------------------|
-| `env_configs/<robosuite_task>/*_privileged.yaml` (×7)    | PyRoKi                                          | works -- LLM-driven via `--server-url`        |
-| `env_configs/human_oracle_code/robosuite/*.yaml` (×7)    | PyRoKi                                          | works -- no LLM (oracle code)                 |
-| `env_configs/human_oracle_code/libero/*.yaml` (×1)       | PyRoKi                                          | works -- no LLM (oracle code)                 |
-| `env_configs/libero/franka_libero_spatial_0_privileged.yaml` | PyRoKi + SAM3 + Contact-GraspNet            | **blocked on T3-A** (Contact-GraspNet)        |
-| `env_configs/cube_stack/franka_robosuite_cube_stack.yaml` (default) and similar SAM3+GraspNet configs | PyRoKi + SAM3 + Contact-GraspNet | **partly unblocked**: SAM3 done (T1-B), still blocked on Contact-GraspNet |
+After T1-B (SAM3 shim) and the threshold tuning fix, the runnable surface area on ROCm is:
+
+| Config family                                                      | api_servers needed                  | Verified? | Status on ROCm                                                  |
+|--------------------------------------------------------------------|-------------------------------------|-----------|-----------------------------------------------------------------|
+| `env_configs/<robosuite_task>/*_privileged.yaml` (×7)               | PyRoKi                              | yes       | works -- LLM-driven via `--server-url`                          |
+| `env_configs/human_oracle_code/robosuite/*_privileged_oracle.yaml` (×7) | PyRoKi                          | yes       | works -- no LLM (oracle code)                                   |
+| `env_configs/human_oracle_code/libero/*_privileged_oracle.yaml` (×1) | PyRoKi                             | yes       | works -- no LLM (oracle code)                                   |
+| `env_configs/spill_wipe/*.yaml` (×8 LLM + 1 oracle)                 | PyRoKi + SAM3                       | partial   | spill_wipe oracle ran end-to-end with HF auth + `SAM3_THRESHOLD=0.1`; sandbox succeeds, reward 0.0 (open-loop perception is the bottleneck, not infra). LLM variants untested but unblocked. |
+| `env_configs/two_arm_handover/*.yaml` (×6 LLM + 1 oracle)           | PyRoKi + SAM3                       | partial   | uses `handover.py` (no molmo). Oracle config silently uses `PRIVILEGED_ORACLE_CODE` so SAM3 is touched only by LLM-driven runs; LLM variants untested but unblocked. |
+| `env_configs/nut_assembly/*.yaml` (×5 LLM + 1 oracle)               | PyRoKi + SAM3                       | no        | uses `nut_assembly_visual.py` which calls `init_molmo()` -> HTTP to vLLM @ 8122 -> needs T2-A + T3-B. **Blocked on molmo, not SAM3.** |
+| `env_configs/libero/franka_libero_spatial_0_privileged.yaml`         | PyRoKi + SAM3 + Contact-GraspNet    | no        | **blocked on T3-A** (Contact-GraspNet)                          |
+| `env_configs/cube_stack/franka_robosuite_cube_stack.yaml` (default) and SAM3+GraspNet configs | PyRoKi + SAM3 + Contact-GraspNet | no | **partly unblocked**: SAM3 + PyRoKi done (T1-B), still blocked on Contact-GraspNet |
+| `env_configs/r1pro/*.yaml` (×54)                                    | SAM3 + Contact-GraspNet (BEHAVIOR)  | no        | **out of scope**: requires NVIDIA Isaac Sim                     |
+
+So the verified-on-ROCm count, after T1-B + HF-auth + threshold tuning, is **16 PyRoKi-only + spill_wipe-tier configs**, with the `two_arm_handover` LLM tier likely working too (unverified — requires an LLM key). The `nut_assembly` SAM3+PyRoKi tier is *not* unblocked yet because the visual path goes through molmo, not raw SAM3.
+
+### Quick way to check whether a SAM3+PyRoKi config will run end-to-end
+
+```sh
+# Inside the container:
+cd /ryzers/cap-x
+grep -l "init_molmo\|molmo_point_fn\|from capx.integrations.vision.molmo" \
+    capx/integrations/franka/*.py
+# Configs whose env class is in this list are blocked on T2-A/T3-B (molmo).
+# Configs whose env class is NOT in this list run on the SAM3 shim.
+```
 
 ### Concrete benchmark numbers from this Ryzer
 
@@ -253,7 +272,26 @@ So the fix is just to keep the FastAPI app structure but swap the inference engi
 - `ryzers run /ryzers/test_capx.sh` → all assertions pass; transformers 5.8.0; torch 2.10.0+rocm7.2.2; numpy 1.26.4.
 - `ryzers run /ryzers/demo_capx.sh` → privileged cube-stack oracle eval still passes (T1-D regression OK).
 - `ryzers run /ryzers/demo_sam3_capx.sh` (no HF_TOKEN) → `/health` reports the shim is loaded; `/segment_point` returns 3 masks for a synthetic bright square (top score 0.985, masks_shape `[3, 64, 64]`).
-- (Not tested in this session: `/segment` text-prompt path, since it requires accepting the SAM3 license on HF and `huggingface-cli login`. The shim's lazy-load + descriptive 503 error makes it diagnose-friendly when weights are missing.)
+
+### Verified end-to-end with HF auth (added 2026-05-12)
+
+After accepting the SAM3 license on HF and passing `HF_TOKEN`:
+
+- **`/segment` on a real `Stack` scene** (640×480 robosuite render) returned high-confidence masks: `red cube` 0.941, `green cube` 0.953, `table` 0.805, `robot arm` 0 results (SAM3 doesn't ground "robot arm" as a single instance — expected).
+- **First-call latency** ≈ 86 s cold (model download + load + inference), subsequent ≈ 5 s/call on Ryzen AI iGPU with `HSA_OVERRIDE_GFX_VERSION=11.0.0`.
+- **Mask format compatibility** with `capx/integrations/vision/sam3.py` confirmed: client expects `{mask_base64, shape, box, score, label}` per result, which matches what the shim returns. No client-side patches required.
+- **`spill_wipe` non-privileged oracle config end-to-end** (`env_configs/human_oracle_code/robosuite/franka_robosuite_spill_wipe_oracle.yaml`) ran with the full SAM3+PyRoKi pipeline. With default `SAM3_THRESHOLD=0.5` SAM3 returned 0 results for "brown spill" (low-contrast prompt on rendered table). After lowering to `SAM3_THRESHOLD=0.1` (env var, see below), the oracle code parsed a valid bbox + extents, planned a wipe trajectory, and ran 3 trials in 112 s (2/3 sandbox-success, 0/3 task-completed — the open-loop perception path produces low rewards even with a working bbox; this matches the spread cap-x reports for non-privileged tiers).
+
+The reward gap between privileged (3/3 success) and non-privileged (0/3 with mediocre bbox) is the inherent cost of the perception tier — it's the actual research signal cap-x is built to measure, not a ROCm porting artifact.
+
+### New env vars exposed by the shim
+
+| Env var               | Default          | Purpose                                                                 |
+|-----------------------|------------------|-------------------------------------------------------------------------|
+| `SAM3_MODEL`          | `facebook/sam3`  | HF repo for the text-prompt model                                       |
+| `SAM2_MODEL`          | `facebook/sam2.1-hiera-large` | HF repo for the point-prompt model                         |
+| `SAM3_THRESHOLD`      | `0.5`            | Confidence floor passed to `post_process_instance_segmentation`. Lower for low-contrast scenes (e.g. 0.1 for spill_wipe). |
+| `SAM3_MASK_THRESHOLD` | `0.5`            | Mask binarization floor passed to the same call. 0.0 = include all positive-logit pixels. |
 
 ### Gotchas to remember
 
