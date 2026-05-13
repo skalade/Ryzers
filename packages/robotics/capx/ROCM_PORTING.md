@@ -94,15 +94,15 @@ These are the units of work for the rest of this document. Each entry is sized s
 |-------|-----------------------------------------------------|-------------|------------------------------------------------------|
 | T1-A  | `jax[rocm]` for pyroki (faster IK)                  | NOT FEASIBLE TODAY | see "Tier 1.A" below — version conflict with ROCm 7.2  |
 | T1-B  | SAM3 ROCm/CPU fallback investigation                | DONE        | shim ships `launch_sam3_server.py` overlay using HF transformers Sam3+Sam2 |
-| T1-C  | LIBERO-PRO support                                  | DEFERRED    | blocked on T1-B; every shipped libero YAML needs SAM3+GraspNet too |
+| T1-C  | LIBERO-PRO support                                  | DEFERRED    | blocked on Contact-GraspNet (T3-A); SAM3 unblocked by T1-B         |
 | T1-D  | `--use-oracle-code` (no-LLM) eval mode              | DONE        | shipped as `demo.sh` / `ryzers run /ryzers/demo_capx.sh` |
 
 ### Tier 2 — medium effort (multi-dep / build-from-source)
 
 | ID    | Item                                                | Status      | Pointer                                              |
 |-------|-----------------------------------------------------|-------------|------------------------------------------------------|
-| T2-A  | vLLM-ROCm as local LLM backend                      | not started | see "Tier 2.A" below                                 |
-| T2-B  | flash-attn ROCm (Triton / Composable Kernel)        | not started | see "Tier 2.B" below                                 |
+| T2-A  | Local LLM backend (vLLM-ROCm or alt)                | RESEARCHED  | see "Tier 2.A" below; multiple paths, none turnkey today |
+| T2-B  | flash-attn ROCm (Triton / Composable Kernel)        | DEFERRED    | only valuable if T2-A or verl-RL is wired up; not blocking anyone |
 
 ### Tier 3 — hard, risky, or speculative
 
@@ -275,38 +275,113 @@ Make it possible to validate the sim+IK pipeline without an OpenRouter / vLLM ba
 
 ---
 
-## Tier 2.A — vLLM-ROCm
+## Tier 2.A — local LLM backend  [RESEARCHED, not built]
 
 ### Goal
 
-Replace OpenRouter with a local vLLM-ROCm server so users can run cap-x evals fully offline.
+Run cap-x evals fully offline (no OpenRouter), using a local LLM behind cap-x's standard OpenAI-compatible `--server-url` interface. Cap-x's `capx/envs/launch.py` accepts any URL via `--server-url`, so the integration boils down to "have a local OpenAI-compatible server listening somewhere".
 
-### Plan sketch
+### Path candidates we evaluated (2026-05-12)
 
-- Use AMD's `rocm/vllm` image as a sibling Ryzer or a build-time install in a separate stage.
-- Wire it into `capx/serving/openrouter_server.py` style by swapping `--server-url` to point at the local vLLM endpoint.
+#### A. AMD lemonade-sdk Ryzer (chained: `ryzers build capx lemonade-sdk`)
 
-This is medium effort because vLLM-ROCm has been stable for a few releases but pinning a torch + vllm + xformers triple that all share the same ROCm and Python versions is fiddly.
+**Status:** broken upstream as of v10.4.0. The Dockerfile pulls `lemonade-server_10.0.0_amd64.deb` from GitHub releases; that filename was removed in v10.4.0 (only `.rpm` is published now). Verified: `wget` returns 404 in container.
+
+**Fix path:** edit `packages/llm/lemonade-sdk/Dockerfile` to either pin to an older tag (last known-good is whichever release still shipped the .deb), pull the RPM and convert with `alien`, or switch to the PyPI package (`pip install lemonade-sdk` — installs cleanly but does **not** create a `lemonade-server` console script in 9.1.4; needs `python3 -m lemonade.server` or similar — verify before relying on it). This is upstream Ryzer maintenance, not part of capx.
+
+#### B. llama.cpp Ryzer (chained: `ryzers build llamacpp capx`)
+
+**Status:** the `packages/llm/llamacpp/` Ryzer builds llama.cpp from source with HIP support (`-DGGML_HIP=ON -DAMDGPU_TARGETS=$GFXSTRING`). Shipping `llama-server` exposes an OpenAI-compatible API on a configurable port. Should compose cleanly with capx as a layered Ryzer.
+
+**Catch:** the llamacpp Dockerfile expects `HSA_OVERRIDE_GFX_VERSION` and `GFXSTRING` build_args (capx doesn't); when chaining you need a `config.yaml` somewhere setting them. Also a clean two-image deployment (`docker run -p 8000:8000 llamacpp:llama-server` + `docker run capx --server-url http://host.docker.internal:8000/v1/chat/completions`) avoids the build-arg coupling entirely.
+
+**Sample workflow once wired up:**
+```sh
+# Container 1 (LLM backend)
+ryzers build llamacpp
+ryzers run bash -c "llama-server -hf <repo>/<model.gguf> --port 8000 --host 0.0.0.0"
+# Container 2 (capx)
+ryzers run --device=/dev/kfd ... bash -c "
+    cd /ryzers/cap-x &&
+    python3 capx/envs/launch.py \
+        --config-path env_configs/cube_stack/franka_robosuite_cube_stack_privileged.yaml \
+        --server-url http://localhost:8000/v1/chat/completions \
+        --model llamacpp"
+```
+
+#### C. vLLM-ROCm baked into capx
+
+**Status:** vanilla `pip install vllm` fetches a CUDA-built wheel (vllm 0.20.2 from PyPI). Verified the wheel imports but `vllm.LLM` fails because (a) the compiled `_C.so` kernels are CUDA, not HIP, and (b) it pulls many `nvidia-*` deps even with `--no-deps`.
+
+The right path is `pip install` from AMD's ROCm vLLM index or building from source with `VLLM_TARGET_DEVICE=rocm`. Both add multi-GB to the image and have non-trivial dep conflicts with our pinned `numpy<2` / `transformers>=5,<6` / ROCm torch — sandbox-time-to-validate is hours, not minutes. Punt unless we get a concrete user demand for it.
+
+#### D. ollama (separate container)
+
+**Status:** unpursued in this session. `curl https://ollama.com/install.sh | sh` is the standard. Could be a 5-minute add as a separate Ryzer. Lacks tensor parallelism but fine for cap-x's single-call eval pattern.
+
+### Recommendation
+
+For a near-term local-LLM story: **option B (chained llamacpp + capx)** is the cheapest path. Track upstream lemonade-sdk Ryzer fix; once that lands, switch the docs to recommend it (better Ryzen-AI integration than llama.cpp). Skip C until someone needs vLLM-specific features.
+
+### What needs to change in capx (none, today)
+
+`capx/envs/launch.py` already takes `--server-url` and `--model`; the upstream OpenRouter proxy under `capx/serving/openrouter_server.py` is just a (configurable) reverse-proxy that we don't need when the local backend is already OpenAI-compatible. The HF transformers Sam3+Sam2 shim from T1-B doesn't depend on any LLM backend. So once a local LLM server exists (any of A/B/C/D), capx just needs the right URL passed in — no source patches required.
 
 ---
 
-## Tier 2.B — flash-attn ROCm
+## Tier 2.B — flash-attn ROCm  [DEFERRED]
 
 ### Goal
 
-Get a `skip_render_images`-style green-light on `from flash_attn import flash_attn_func` running on ROCm. Required by molmo and verl.
+`from flash_attn import flash_attn_func` working on ROCm. Required only by `molmo` (T3-B) and `verl`-based RL training (T3-C). Not on the critical path for any current cap-x workload.
 
-### Path candidates
+### Path candidates (sketched, not validated)
 
-1. **AOTriton flash-attn.** AMD's tritonized flash-attn (`https://github.com/ROCm/aotriton`). PyTorch 2.5+ has `torch.nn.functional.scaled_dot_product_attention` ROCm fast path that uses it under the hood; some libraries can be coaxed into using SDPA instead of `flash_attn`.
-2. **`composable_kernel` flash-attn.** `pip install flash-attn --no-build-isolation` against ROCm-built PyTorch sometimes works directly.
-3. **`xformers` ROCm.** Has its own memory-efficient attention; cap-x doesn't currently use it but verl-style trainers can be told to.
+1. **AOTriton flash-attn.** AMD's tritonized flash-attn (`https://github.com/ROCm/aotriton`). PyTorch 2.5+ has `torch.nn.functional.scaled_dot_product_attention` ROCm fast path that uses AOTriton under the hood. Some libraries can be coaxed into using SDPA instead of `flash_attn` directly, eliminating the dep. Cap-x doesn't import flash-attn anywhere in `capx/` — it only matters if the LLM backend (vLLM/verl) requires it.
+2. **`composable_kernel` flash-attn.** `pip install flash-attn --no-build-isolation` against ROCm PyTorch sometimes works (recent flash-attn upstream has ROCm support for gfx94x/gfx95x; gfx11xx Ryzen AI is less well covered).
+3. **`xformers` ROCm.** Memory-efficient attention; nothing in capx uses it but it's the typical fallback for LLM trainers.
+
+### Why we're deferring
+
+Without a local LLM backend (T2-A) baked in, flash-attn is dead weight. If a user wires up a vLLM-ROCm or verl-ROCm pipeline later, that's the right time to revisit this — they'll know which API surface needs to be satisfied.
 
 ---
 
-## Tier 3 (placeholder)
+## Tier 3 — hard / risky / deferred
 
-We're not there yet; will fill in if/when Tier 2 is solid.
+We have not started any of these. Quick sketches so the next agent doesn't repeat investigation:
+
+### T3-A — contact_graspnet_pytorch (CUDA → ROCm)
+
+Used by every default cube_stack and LIBERO config to generate grasp candidates from depth/pointclouds. Custom CUDA kernels (PointNet++ ops, KNN) — direct ROCm port is nontrivial (~days). Two pragmatic alternatives:
+1. **Replace with a heuristic.** Cap-x's grasp candidates are a list of `(pos, quat)` poses ranked by score. For top-down tabletop grasps you can synthesize a serviceable list from the SAM3 mask centroid + a fixed downward orientation. This unblocks the LIBERO and default cube_stack configs without porting any GPU kernels.
+2. **Find an existing PyTorch-only fork.** Some `contact_graspnet_pytorch` forks have CPU paths or HIP ports — search github before you start writing kernels.
+
+This is the **single biggest unlock** remaining for ROCm cap-x — would unblock T1-C (LIBERO) and let the default `franka_robosuite_cube_stack.yaml` work without `_privileged`.
+
+### T3-B — molmo extra
+
+The `molmo` extra in pyproject installs `transformers + tensorflow + accelerate + bitsandbytes` for a Molmo-based image grounding model. Tensorflow has ROCm support, but cap-x pins specific tensorflow versions that may not match. Lower priority; cap-x can use the SAM3 server's text-prompt path for the same purpose.
+
+### T3-C — verl-based RL training
+
+Depends on T2-A (vLLM-ROCm) and T2-B (flash-attn-ROCm) being solid. Not blocking any current capx user.
+
+### T3-D — full SAM3 with HIP-ported CUDA kernels
+
+We picked the HF transformers fallback (T1-B) instead. The Max-Fu/sam3 kernels could be HIP-ported but the HF-transformers Sam3 has the same model weights and is functionally equivalent for cap-x's use case. **Don't pursue this.**
+
+---
+
+## What's next — concrete handoff
+
+If picking this up cold, here's the highest-leverage next step:
+
+1. **Read `Dockerfile`, `test.sh`, `demo.sh`, `demo_sam3.sh`, `launch_sam3_server.py`, this file.** That's the whole engineering surface. Less than 1k LOC total.
+2. **Try T3-A heuristic-grasp approach.** This is the highest-value remaining unlock — a small `launch_contact_graspnet_server.py` overlay (analogous to our SAM3 shim) that uses SAM3 mask centroid + a top-down quat as a single grasp candidate. Should be ~150 LOC. If it works, it unblocks the entire default-config cube_stack flow on ROCm and most LIBERO configs (modulo the robosuite-fork conflict).
+3. **Or try T2-A option B.** Layer llamacpp + capx as a chained Ryzer; verify a small Qwen GGUF model serves correctly and capx eval drives end-to-end with no API key.
+
+Each of those is a self-contained 1-2 hour session; pick one based on whether the next user prefers "more configs work" (T3-A) or "no API key needed" (T2-A).
 
 ---
 
