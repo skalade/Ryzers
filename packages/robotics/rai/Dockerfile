@@ -56,10 +56,24 @@ RUN . ./scripts/download_demo.sh manipulation
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
     colcon build --symlink-install
 
-# Reinstall ROCm torch (poetry deps pull CUDA torch)
-RUN pip install torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/rocm7.2/ \
-    --force-reinstall --no-deps
+# poetry installs only rai_core + rai_whoami; the demo also needs these extensions.
+RUN pip install \
+    -e src/rai_sim \
+    -e src/rai_bench \
+    -e src/rai_extensions/rai_perception
+
+# Pin the base image's ROCm torch/triton wheels (poetry + extensions pull mismatched ones).
+ARG ROCM_WHEEL_BASE=https://repo.radeon.com/rocm/manylinux/rocm-rel-7.2.2
+RUN pip install --force-reinstall --no-deps \
+    ${ROCM_WHEEL_BASE}/torch-2.10.0%2Brocm7.2.2.lw.git40d237bf-cp312-cp312-linux_x86_64.whl \
+    ${ROCM_WHEEL_BASE}/torchvision-0.25.0%2Brocm7.2.2.git82df5f59-cp312-cp312-linux_x86_64.whl \
+    ${ROCM_WHEEL_BASE}/torchaudio-2.10.0%2Brocm7.2.2.git5047768f-cp312-cp312-linux_x86_64.whl \
+    ${ROCM_WHEEL_BASE}/triton-3.6.0%2Brocm7.2.2.git4ed88892-cp312-cp312-linux_x86_64.whl
+
+# Vulkan ICD/driver for the O3DE renderer (base ships only the loader, not a driver).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    mesa-vulkan-drivers libgl1-mesa-dri \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /ryzers
 COPY test.sh /ryzers/test_rai.sh
