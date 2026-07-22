@@ -15,6 +15,10 @@
 
 ### ryzers build options
 
+# Keep this package on the ROCm/PyTorch combination validated below even if the
+# repository-wide default changes.
+init_image: "rocm/pytorch:rocm7.2.2_ubuntu24.04_py3.12_pytorch_release_2.10.0"
+
 build_arguments:
 - "CAPX_SIM=robosuite"     # robosuite | libero  (mutually exclusive families)
 # Pin a specific CaP-X commit for reproducibility (defaults to an audited commit
@@ -44,6 +48,7 @@ environment_variables:
 
 # --- Rendering -----------------------------------------------------------
 - "MUJOCO_GL=egl"
+- "PYOPENGL_PLATFORM=egl"
 # Uncomment to force a GFX arch if you hit "invalid device function":
 #   Strix Halo (gfx1151):           "HSA_OVERRIDE_GFX_VERSION=11.5.1"
 #   Phoenix/Strix laptop (gfx1103): "HSA_OVERRIDE_GFX_VERSION=11.0.0"

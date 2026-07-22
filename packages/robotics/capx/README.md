@@ -9,7 +9,7 @@ This Ryzer runs the **CaP-Gym evaluation path** on AMD Ryzen AI hardware: a codi
 
 Everything GPU-bound runs on ROCm: the perception models (SAM3, Contact-GraspNet) on ROCm PyTorch, and MuJoCo rendering via EGL on the AMD GPU. Motion planning (PyRoKi IK) runs on CPU `jax`, exactly as CaP-X ships upstream.
 
-> **Validated on:** AMD Ryzen AI MAX+ 395 (Radeon 8060S, gfx1151) / Strix Halo, Ubuntu 24.04, ROCm 7.2.
+> **Validated on:** AMD Ryzen AI MAX+ 395 (Radeon 8060S, gfx1151) / Strix Halo, Ubuntu 24.04, ROCm 7.2.2, PyTorch 2.10.
 
 ---
 
@@ -18,7 +18,7 @@ Everything GPU-bound runs on ROCm: the perception models (SAM3, Contact-GraspNet
 | Component | Status | Notes |
 |---|---|---|
 | Robosuite eval | ✅ | `--build-arg CAPX_SIM=robosuite` (default) |
-| LIBERO-PRO eval | ✅ | `--build-arg CAPX_SIM=libero` |
+| LIBERO-PRO eval | ⚠️ | Image path retained but not validated by this branch |
 | SAM3 / SAM2 / OWLv2 perception | ✅ | ROCm PyTorch |
 | Contact-GraspNet | ✅ | PyTorch fork, no custom CUDA kernels |
 | PyRoKi IK / trajopt | ✅ | CPU `jax` (matches upstream lockfile) |
@@ -38,7 +38,7 @@ Everything GPU-bound runs on ROCm: the perception models (SAM3, Contact-GraspNet
 ryzers build capx
 ryzers run                 # runs the sign-of-life test
 
-# LIBERO-PRO — set CAPX_SIM=libero in config.yaml build_arguments first,
+# LIBERO-PRO (experimental) — set CAPX_SIM=libero in config.yaml first,
 # then build under a distinct name:
 ryzers build --name capx-libero capx
 ryzers run --name capx-libero
@@ -111,7 +111,7 @@ Get a key at <https://openrouter.ai/keys> and set `OPENROUTER_API_KEY` in [`conf
 # inside `ryzers run bash`
 cd /ryzers/cap-x
 echo "$OPENROUTER_API_KEY" > .openrouterkey
-uv run --no-sync --active capx/serving/openrouter_server.py \
+python3 capx/serving/openrouter_server.py \
     --key-file .openrouterkey --port 8110 &
 
 # Robosuite single-turn benchmark
@@ -213,6 +213,9 @@ Outputs (per-trial rewards + videos) land in `outputs/<model>/<config>/` — sur
 This package bakes in several fixes discovered while porting CaP-X (whose dependency set is `uv`-native and assumes CUDA) to a ROCm PyTorch base on Python 3.12:
 
 - **torch is never reinstalled.** A generated `constraints.txt` pins the base image's ROCm torch/torchvision so no transitive dep can pull a CUDA wheel.
+- **Robosuite simulator versions are locked.** `mujoco==3.5.0` and `mink==1.1.0` match CaP-X's lockfile; newer MuJoCo releases changed `mj_fullM` and break the pinned Robosuite 1.5.1 fork.
+- **The package pins its base image** to ROCm 7.2.2 / PyTorch 2.10 so a future repository-wide default change cannot silently alter this validated environment.
+- **`pyrender==0.1.45` is installed with CaP-X's PyOpenGL 3.1.6 override.** Its stale package metadata requests PyOpenGL 3.1.0, so pip's normal resolver cannot reproduce the upstream uv lock directly.
 - **`jax` is CPU-only**, matching CaP-X's lockfile (plain `jax==0.4.29`, no GPU plugin). PyRoKi IK is a CPU workload upstream too — this is faithful, not a downgrade.
 - **`PyOpenGL-accelerate==3.1.6` pin dropped** — it has no cp312 wheel and fails to compile; it's an optional perf shim.
 - **`setuptools<81`** — SAM3 imports `pkg_resources`, removed in setuptools ≥81.

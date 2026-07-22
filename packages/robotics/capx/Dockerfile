@@ -35,11 +35,11 @@ ARG CAPX_SIM=robosuite
 # versions in CaP-X's uv.lock. Override to track upstream.
 ARG CAPX_REF=53e9966d7a8e2fa7494676772bccc35280f5c0ed
 
+# MuJoCo headless rendering uses EGL/OpenGL rather than CUDA.
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PIP_BREAK_SYSTEM_PACKAGES=1 \
     CAPX_SIM=${CAPX_SIM} \
-    # MuJoCo headless rendering via EGL (OpenGL, not CUDA — works on AMD).
     MUJOCO_GL=egl \
     PYOPENGL_PLATFORM=egl
     # Strix Halo (Ryzen AI Max, gfx1151) is supported natively by ROCm 7.2,
@@ -74,8 +74,9 @@ import torch, torchvision
 print(f"torch=={torch.__version__.split('+')[0]}")
 print(f"torchvision=={torchvision.__version__.split('+')[0]}")
 PY
-# Match CaP-X's uv override-dependencies (pyproject.toml [tool.uv]):
-#   numpy==1.26.4, PyOpenGL==3.1.6, opencv-python-headless<4.13, jax/jaxlib<0.4.30.
+# Match CaP-X's uv override-dependencies and the Python 3.12 Robosuite
+# resolution in its lockfile. In particular, Robosuite 1.5.1 still calls the
+# pre-3.10 mj_fullM API, so allowing the current MuJoCo release breaks startup.
 # FIX: CaP-X also pins PyOpenGL-accelerate==3.1.6, but that version has no cp312
 # wheel and fails to compile on the base image's Python 3.12. -accelerate is an
 # optional perf add-on (not required), so we omit the pin and only constrain
@@ -86,6 +87,10 @@ RUN printf '%s\n' \
         'opencv-python-headless<4.13' \
         'jax==0.4.29' \
         'jaxlib==0.4.29' \
+        'mujoco==3.5.0' \
+        'mink==1.1.0' \
+        'networkx==3.6.1' \
+        'pyglet==2.1.13' \
     >> /ryzers/constraints.txt && cat /ryzers/constraints.txt
 
 # ---------------------------------------------------------------------------
@@ -117,9 +122,16 @@ RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
         requests tqdm h5py einops decord pycocotools pyyaml omegaconf \
         open3d "robot_descriptions>=1.16.0" "yourdfpy>=0.0.56" "viser>=0.2.0" \
         "trimesh>=4.4.0" msgpack_numpy "ray==2.48.0" "mediapy>=1.2.5" \
-        uvicorn fastapi "transformers<5.0" openai pyrender \
+        uvicorn fastapi "transformers<5.0" openai \
         "opencv-python-headless<4.13" "pillow>=10" cloudpickle \
-        "setuptools<81"
+        "setuptools<81" \
+        "mujoco==3.5.0" "mink==1.1.0" "networkx==3.6.1" "pyglet==2.1.13" \
+        "pyliblzfse==0.4.1" freetype-py six
+
+# CaP-X overrides pyrender's stale PyOpenGL==3.1.0 metadata to PyOpenGL 3.1.6.
+# pip cannot express uv's override directly, so install the exact locked
+# pyrender after all of its runtime dependencies are present.
+RUN pip install --no-cache-dir --no-deps "pyrender==0.1.45"
 
 # ---------------------------------------------------------------------------
 # PyRoKi (JAX-based IK / trajopt — the DEFAULT motion layer; replaces cuRobo for
