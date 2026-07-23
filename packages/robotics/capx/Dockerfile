@@ -9,20 +9,6 @@
 #   - LIBERO-PRO (robosuite 1.4.x)
 # Because the two pin conflicting robosuite versions, pick ONE per image with:
 #   --build-arg CAPX_SIM=robosuite   (default)   or   CAPX_SIM=libero
-#
-# The Ryzers default base (rocm/pytorch:...py3.12_pytorch_release_2.10.0) already
-# ships a ROCm-built torch/torchvision; we DO NOT reinstall torch so the ROCm
-# build is preserved. GPU work (SAM3, Contact-GraspNet) runs on ROCm torch;
-# MuJoCo renders via EGL on the AMD GPU; PyRoKi IK runs on CPU jax (matching
-# CaP-X upstream, whose lockfile pins plain CPU jax 0.4.29 — no GPU jax plugin).
-#
-# NOT included (out of scope for the eval image):
-#   - cuRobo  (hand-written CUDA/NVRTC kernels, no ROCm fork; gated off in the
-#             default Robosuite/LIBERO configs anyway — PyRoKi is the default
-#             motion layer)
-#   - verl / vllm / flash-attn  (CaP-RL TRAINING path, not eval — portable to
-#             ROCm via ROCm/vllm + ROCm/aiter, but a separate image)
-#   - molmo   (pins a different torch; optional perception backend)
 
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
@@ -42,17 +28,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     CAPX_SIM=${CAPX_SIM} \
     MUJOCO_GL=egl \
     PYOPENGL_PLATFORM=egl
-    # Strix Halo (Ryzen AI Max, gfx1151) is supported natively by ROCm 7.2,
-    # so no HSA override is normally needed. If you hit "invalid device function"
-    # set HSA_OVERRIDE_GFX_VERSION in config.yaml to match your part, e.g.:
-    #   gfx1151 (Strix Halo):           11.5.1
-    #   gfx1103 (Phoenix/Strix laptop): 11.0.0
 
 WORKDIR /ryzers
 
-# ---------------------------------------------------------------------------
 # System deps: build toolchain + EGL/GL stack for MuJoCo, pyrender, open3d.
-# ---------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git wget curl ca-certificates cmake build-essential pkg-config \
         python3-dev \
@@ -64,16 +43,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN git config --global credential.helper store
 
-# ---------------------------------------------------------------------------
 # Pin-constraints that protect the base ROCm torch and match CaP-X's
 # uv override-dependencies. torch/torchvision are pinned to the base image's
 # installed versions so pip will NEVER pull a different (CUDA) build.
-# ---------------------------------------------------------------------------
 RUN python3 - <<'PY' > /ryzers/constraints.txt
 import torch, torchvision
 print(f"torch=={torch.__version__.split('+')[0]}")
 print(f"torchvision=={torchvision.__version__.split('+')[0]}")
 PY
+
 # Match CaP-X's uv override-dependencies and the Python 3.12 Robosuite
 # resolution in its lockfile. In particular, Robosuite 1.5.1 still calls the
 # pre-3.10 mj_fullM API, so allowing the current MuJoCo release breaks startup.
@@ -93,12 +71,10 @@ RUN printf '%s\n' \
         'pyglet==2.1.13' \
     >> /ryzers/constraints.txt && cat /ryzers/constraints.txt
 
-# ---------------------------------------------------------------------------
 # Clone CaP-X. Clone WITHOUT --recurse-submodules, then init only the submodules
 # the eval images actually use. This skips curobo (huge + nested CUDA submodules),
 # b1k (BEHAVIOR/Isaac Sim), and verl (RL training) — none needed for the
 # Robosuite/LIBERO eval path, and a large time/space saving.
-# ---------------------------------------------------------------------------
 RUN git clone https://github.com/capgym/cap-x /ryzers/cap-x \
     && cd /ryzers/cap-x && git checkout ${CAPX_REF} \
     && git submodule update --init \
@@ -110,12 +86,10 @@ RUN git clone https://github.com/capgym/cap-x /ryzers/cap-x \
 
 WORKDIR /ryzers/cap-x
 
-# ---------------------------------------------------------------------------
 # Base runtime deps (the PyPI-resolvable subset of [project.dependencies]).
 # Excludes torch/torchvision (kept from base) and anything CUDA-only.
 # FIX: include setuptools<81 — sam3 imports pkg_resources, removed in
 # setuptools>=81.
-# ---------------------------------------------------------------------------
 RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
         "gymnasium>=0.29" "tyro>=0.8.5" "pydantic>=2.7" "rich>=13.7" \
         "scipy>=1.12" "matplotlib>=3.10" "imageio[ffmpeg]>=0.6.0" \
@@ -133,13 +107,11 @@ RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
 # pyrender after all of its runtime dependencies are present.
 RUN pip install --no-cache-dir --no-deps "pyrender==0.1.45"
 
-# ---------------------------------------------------------------------------
 # PyRoKi (JAX-based IK / trajopt — the DEFAULT motion layer; replaces cuRobo for
 # the Robosuite/LIBERO bench). CaP-X's uv.lock resolves jax/jaxlib to plain CPU
 # 0.4.29 wheels (no CUDA/ROCm jax plugin), so IK runs on CPU jax exactly as
 # upstream ships it. pyroki + jaxls pinned to the lockfile commits; --no-deps so
 # they can't re-resolve jax off the 0.4.29 pin.
-# ---------------------------------------------------------------------------
 RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
         "jax==0.4.29" "jaxlib==0.4.29" \
         jaxlie jax_dataclasses jaxtyping loguru termcolor \
@@ -147,28 +119,22 @@ RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
         "git+https://github.com/brentyi/jaxls.git@6fe7cf9d56223736b2c0272d080ec7346203c648" \
         "git+https://github.com/chungmin99/pyroki.git@95afccc22658c461ab1042a048ae4e9c24bc2a47"
 
-# ---------------------------------------------------------------------------
 # SAM3 (pure-PyTorch, runs on ROCm torch). Weights are GATED on HuggingFace —
 # request access at https://huggingface.co/facebook/sam3 and pass HF_TOKEN at
 # run time (the entrypoint logs in). See README for an ungated SAM2/OWLv2
 # alternative that needs no token.
-# ---------------------------------------------------------------------------
 RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
         -e capx/third_party/sam3
 
-# ---------------------------------------------------------------------------
 # Contact-GraspNet (the uynitsuj PyTorch fork — no custom CUDA kernels).
 # FIX: --no-build-isolation — its setup.py imports numpy at build time; mirrors
 # CaP-X's uv `extra-build-dependencies: contact-graspnet-pytorch = ["numpy"]`.
-# ---------------------------------------------------------------------------
 RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
         --no-build-isolation \
         -e capx/third_party/contact_graspnet_pytorch
 
-# ---------------------------------------------------------------------------
 # Simulator family (mutually exclusive — chosen by CAPX_SIM).
 # All editable submodule installs use --no-build-isolation (numpy at build time).
-# ---------------------------------------------------------------------------
 RUN if [ "$CAPX_SIM" = "libero" ]; then \
         echo ">>> Installing LIBERO-PRO stack"; \
         pip install --no-cache-dir -c /ryzers/constraints.txt \
@@ -197,10 +163,8 @@ RUN if [ "$CAPX_SIM" = "libero" ]; then \
 # puts `capx` on the path). --no-build-isolation so it sees the base torch.
 RUN pip install --no-cache-dir --no-deps --no-build-isolation -e .
 
-# ---------------------------------------------------------------------------
 # Entrypoint: optional HuggingFace login (SAM3 gated weights) + sign-of-life
-# test. Pass HF_TOKEN via config.yaml / -e to enable SAM3 weight download.
-# ---------------------------------------------------------------------------
+# test. Pass HF_TOKEN via config.yaml to enable SAM3 weight download.
 COPY test.sh /ryzers/test_capx.sh
 RUN chmod +x /ryzers/test_capx.sh
 
