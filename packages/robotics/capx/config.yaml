@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 #
 
+init_image: "rocm/pytorch:rocm7.14_ubuntu24.04_py3.12_pytorch_release_2.12.0"
+
 build_arguments:
 - "CAPX_SIM=robosuite"     # robosuite | libero  (mutually exclusive families)
 
@@ -12,6 +14,11 @@ environment_variables:
 # CaP-X queries an LLM over an OpenAI-compatible /chat/completions API. The
 # simplest path is OpenRouter, exactly like upstream.
 # - "OPENROUTER_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxx"
+
+# CAPX_LLM_* configures the optional stage 3 agentic evaluation.
+# - "CAPX_LLM_SERVER_URL=http://127.0.0.1:8110/chat/completions"
+# - "CAPX_LLM_MODEL=openrouter/google/gemini-3.1-pro-preview"
+# - "CAPX_LLM_TRIALS=1"
 
 # --- SAM3 perception weights (OPTIONAL): gated on HuggingFace -------------
 # SAM3 (facebook/sam3) requires HF access approval
