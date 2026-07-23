@@ -130,6 +130,7 @@ else
             --config-path "${LLM_CONFIG}" \
             --model "${MODEL}" \
             --server-url "${CAPX_LLM_SERVER_URL}" \
+            --api-key "${CAPX_LLM_API_KEY:-}" \
             --total-trials "${TRIALS}" \
             --num-workers 1 \
             --max-tokens 4096 >"$LLM_LOG" 2>&1; then

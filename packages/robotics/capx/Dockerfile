@@ -127,7 +127,7 @@ RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
 RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
         -e capx/third_party/sam3
 
-# Contact-GraspNet (the uynitsuj PyTorch fork — no custom CUDA kernels).
+# Contact-GraspNet (uynitsuj’s fork of elchun’s PyTorch port; no custom CUDA kernels).
 # FIX: --no-build-isolation — its setup.py imports numpy at build time; mirrors
 # CaP-X's uv `extra-build-dependencies: contact-graspnet-pytorch = ["numpy"]`.
 RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
