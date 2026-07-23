@@ -62,6 +62,7 @@ PY
 RUN printf '%s\n' \
         'numpy==1.26.4' \
         'PyOpenGL==3.1.6' \
+        'matplotlib>=3.10,<3.11' \
         'opencv-python-headless<4.13' \
         'jax==0.4.29' \
         'jaxlib==0.4.29' \
@@ -92,7 +93,7 @@ WORKDIR /ryzers/cap-x
 # setuptools>=81.
 RUN pip install --no-cache-dir -c /ryzers/constraints.txt \
         "gymnasium>=0.29" "tyro>=0.8.5" "pydantic>=2.7" "rich>=13.7" \
-        "scipy>=1.12" "matplotlib>=3.10" "imageio[ffmpeg]>=0.6.0" \
+        "scipy>=1.12" "matplotlib>=3.10,<3.11" "imageio[ffmpeg]>=0.6.0" \
         requests tqdm h5py einops decord pycocotools pyyaml omegaconf \
         open3d "robot_descriptions>=1.16.0" "yourdfpy>=0.0.56" "viser>=0.2.0" \
         "trimesh>=4.4.0" msgpack_numpy "ray==2.48.0" "mediapy>=1.2.5" \
