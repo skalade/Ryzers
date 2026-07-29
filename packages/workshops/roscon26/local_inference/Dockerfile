@@ -204,6 +204,23 @@ RUN pip install jupyterlab "numpy<2" matplotlib ipywidgets
 COPY notebooks /ryzers/notebooks/
 RUN chmod -R 777 /ryzers/notebooks
 
+# Headless rendering. O3DE renders through Vulkan, which needs a presentable
+# surface: Xvfb can't provide one (no DRI3, so only the llvmpipe software
+# device is presentable), but Xwayland on a headless Weston compositor can -
+# it hands the X server the real /dev/dri render node, so the iGPU renders the
+# simulation with no monitor attached.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    weston xwayland \
+ && rm -rf /var/lib/apt/lists/*
+
+# Manipulation demo: point RAI at Lemonade, then run it on a virtual display
+COPY lemonade_env.sh manipulation_demo_headless.sh manipulation_demo_streamlit.py /ryzers/
+RUN chmod +x /ryzers/manipulation_demo_headless.sh
+
+# Streamlit asks for an email on first launch, which blocks the demo script
+RUN mkdir -p /root/.streamlit && \
+    printf '[general]\nemail = ""\n' > /root/.streamlit/credentials.toml
+
 # Make ROS + RAI environment available to all interactive shells
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /etc/bash.bashrc && \
     echo "[ -f /ryzers/rai/install/setup.bash ] && source /ryzers/rai/install/setup.bash" >> /etc/bash.bashrc
@@ -221,5 +238,7 @@ WORKDIR /ryzers/notebooks
 EXPOSE 8888
 EXPOSE 11311
 EXPOSE 13305
+EXPOSE 8501
+EXPOSE 8080
 
 CMD ["/bin/bash", "/entrypoint.sh"]

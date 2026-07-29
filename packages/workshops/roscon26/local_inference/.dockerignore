@@ -1,0 +1,7 @@
+# Host-side caches mounted into the container at runtime (root-owned, and
+# several GB of model weights) - never part of the build context
+workspace/
+
+# Written into the mounted notebooks dir by JupyterLab, root-owned
+notebooks/.Trash-0/
+notebooks/**/.ipynb_checkpoints/
