@@ -1,0 +1,29 @@
+# Copyright(C) 2026 Advanced Micro Devices, Inc. All rights reserved.
+# SPDX-License-Identifier: MIT
+
+# Official vLLM 0.29.0 ROCm image. Its PyTorch arch list includes gfx1151
+# (Ryzen AI MAX / AI 300) as well as gfx1100/gfx1101 and gfx1200/gfx1201.
+init_image: "vllm/vllm-openai-rocm:v0.29.0"
+
+x11_display: false
+
+# Calibration values from serve/SERVE.md. Changing them changes the
+# probabilities the model card was measured with.
+environment_variables:
+- "VLLM=http://127.0.0.1:8000/v1"
+- "TOKENIZER=/opt/openjev/model"
+- "READOUT_T=0.85"
+- "READOUT_NOUL_T=1.829074"
+- "READOUT_NOUL_BIAS=0"
+- "READOUT_TARGETED=1"
+- "READOUT_INSTR_STYLE=pyrepr"
+- "SHIM_STAGGER=1"
+- "OPENJEV_MODEL_DIR=/opt/openjev/model"
+- "HF_HUB_DISABLE_TELEMETRY=1"
+
+port_mappings:
+- "3000:3000"
+
+volume_mappings:
+- "$PWD/workspace/openjev/model:/opt/openjev/model"
+- "$PWD/workspace/.cache/huggingface:/root/.cache/huggingface"
