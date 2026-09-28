@@ -1,6 +1,6 @@
 # OpenJev Docker Setup
 
-[OpenJev](https://huggingface.co/openjev/openjev) is an open-weights decision model. You describe the decision in the request, with your own labels, and it returns a choice, a yes/no probability, or a score. There is no generated text to parse.
+[OpenJev](https://huggingface.co/openjev/openjev) is an open-weights decision model. You describe the decision in the request, with your own labels, and it returns a choice, a yes/no probability, or a score, with no text to parse.
 
 This package serves it the way the model card was measured: vLLM 0.29.0 with online FP8, and the upstream helper in front. The helper reads option-letter scores from one forward pass. The base image is `vllm/vllm-openai-rocm:v0.29.0`, whose PyTorch build includes `gfx1151` (Ryzen AI MAX / AI 300).
 
@@ -21,7 +21,7 @@ Start the decision server:
 ryzers run /ryzers/serve_openjev.sh
 ```
 
-Ryzers runs with host networking, so the API is at `http://127.0.0.1:3000`. vLLM stays on `127.0.0.1:8000` and is not the client API.
+Ryzers runs with host networking, so the helper is at `http://127.0.0.1:3000`. vLLM stays on `127.0.0.1:8000`.
 
 ```sh
 curl -s http://127.0.0.1:3000/v1/systemone \
@@ -41,8 +41,8 @@ curl -s http://127.0.0.1:3000/v1/systemone \
 
 ## Volumes
 
-- `workspace/openjev/model` — model weights, reused across runs
-- `workspace/.cache/huggingface` — Hugging Face cache
+- `workspace/openjev/model`: model weights, reused across runs
+- `workspace/.cache/huggingface`: Hugging Face cache
 
 ## Memory
 
@@ -52,7 +52,7 @@ The vLLM log inside the container is `/tmp/openjev-vllm.log`.
 
 ## Exposing the helper
 
-The helper binds `127.0.0.1`. To listen on another address, set `OPENJEV_SHIM_HOST` and `SHIM_TOKEN`. The serve script will not bind a non-loopback address without a token. vLLM stays on loopback either way. The helper speaks plain HTTP.
+The helper binds `127.0.0.1`. To listen on another address, set `OPENJEV_SHIM_HOST` and `SHIM_TOKEN`. The script refuses a non-loopback bind when `SHIM_TOKEN` is empty. vLLM stays on loopback. The helper speaks plain HTTP.
 
 ## Licence
 

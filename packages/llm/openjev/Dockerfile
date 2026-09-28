@@ -1,10 +1,10 @@
 # Copyright(C) 2026 Advanced Micro Devices, Inc. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
-# OpenJev decision server. The base image is vllm/vllm-openai-rocm:v0.29.0
-# (set in config.yaml). That image's PyTorch is built for gfx1151, so it
-# covers Ryzen AI MAX / AI 300. The published image ENTRYPOINT is
-# `vllm serve`; clear it so `ryzers run` can execute the test or serve script.
+# OpenJev decision server. config.yaml sets the base image to
+# vllm/vllm-openai-rocm:v0.29.0. That image's PyTorch includes gfx1151
+# (Ryzen AI MAX / AI 300). The image ENTRYPOINT is `vllm serve`. Clear it
+# so `ryzers run` can run the test or the serve script.
 
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
@@ -13,9 +13,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 ENTRYPOINT []
 
-# Pins from openjev/openjev serve/SERVE.md. A constraint keeps the image's
-# ROCm torch in place: an unconstrained transformers install can replace it
-# with a CUDA wheel from PyPI.
+# Pins from openjev/openjev serve/SERVE.md. The constraint blocks pip from
+# replacing this image's ROCm torch with a CUDA wheel from PyPI.
 RUN torch_spec="$(python3 -c 'import torch; print(torch.__version__)')" && \
     printf 'torch==%s\n' "${torch_spec}" > /tmp/torch-constraint.txt && \
     python3 -m pip install --no-cache-dir \
@@ -26,8 +25,8 @@ RUN torch_spec="$(python3 -c 'import torch; print(torch.__version__)')" && \
         "transformers==5.17.0" && \
     python3 -c "import torch; assert torch.__version__ == '${torch_spec}', torch.__version__; assert torch.version.hip, torch.__version__; print('torch', torch.__version__, 'hip', torch.version.hip)"
 
-# Helper only. The bfloat16 weights are about 54 GB and are downloaded
-# at serve time into the mounted model directory.
+# Install the helper only. The bfloat16 weights are about 54 GB and are
+# downloaded at serve time into the mounted model directory.
 ENV OPENJEV_ROOT=/opt/openjev
 RUN mkdir -p "${OPENJEV_ROOT}/model" && \
     python3 - <<'PY'

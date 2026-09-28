@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: MIT
 #
 # Download openjev/openjev if needed, serve it with the measured vLLM flags,
-# and put the upstream decision helper on port 3000.
-# vLLM stays on 127.0.0.1. The helper does too, unless OPENJEV_SHIM_HOST is
-# set. Exposing the helper requires SHIM_TOKEN; see the package README.
+# and run the upstream decision helper on port 3000.
+# vLLM binds 127.0.0.1. The helper binds 127.0.0.1 unless OPENJEV_SHIM_HOST
+# is set. A non-loopback helper host requires SHIM_TOKEN. See the README.
 
 set -euo pipefail
 set -m
