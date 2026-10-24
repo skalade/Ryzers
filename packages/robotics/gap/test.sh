@@ -191,6 +191,43 @@ assert np.linalg.norm(end_fk[4:7] - np.array(list(end["position"].values()))) < 
 
 print("PyRoKi real Cartesian plan OK")
 
+# Call each embodiment tool that open-robot-skills expects of the connector.
+connector = gap.connector.sim("libero", task="libero_popcorn_production/0")
+try:
+    connector.reset()
+    tools = connector.tool_registry
+    arm = tools.invoke("robot.describe_arm", None)
+    assert arm["arm_id"] == 0
+    assert np.allclose(list(arm["tcp_offset"].values()), connector._default_tcp_offset())
+    gripper = tools.invoke("robot.describe_gripper", None)
+    assert gripper["close_axis"] == {"x": 0.0, "y": 1.0, "z": 0.0}
+    assert gripper["approach_axis"] == {"x": 0.0, "y": 0.0, "z": 1.0}
+    workspace = tools.invoke("robot.describe_workspace", None)
+    assert workspace["source"] == "measured"
+    assert workspace["transport_z"] > workspace["surface_z"]
+    frame = tools.invoke("robot.grasp_frame", None, close_heading_deg=90.0, arm_id=0)
+    down = np.asarray([frame["rotation"][k] for k in ("w", "x", "y", "z")])
+    assert np.allclose(np.abs(down), [0.0, 0.0, 1.0, 0.0], atol=1e-9)
+    steps_before = connector.env._sim_step_count
+    assert tools.invoke("robot.wait_steps", None, steps=5) == {"steps": 5}
+    assert connector.env._sim_step_count > steps_before
+    opened = tools.invoke("robot.set_grip", None, fraction=1.0, settle_steps=40)
+    closed = tools.invoke("robot.set_grip", None, fraction=0.0, settle_steps=60)
+    assert closed["position"] < opened["position"]
+    world = connector.world_snapshot()
+    name = next(iter(world.bodies))
+    pose = tools.invoke("sim.get_object_pose", None, object_name=name)
+    assert pose["frame_convention"] == "robot_base"
+    position = [pose["pose"]["position"][k] for k in ("x", "y", "z")]
+    assert np.allclose(position, world.body(name).position)
+    box = tools.invoke("sim.get_object_obb", None, object_name=name)
+    assert all(v > 0.0 for v in box["obb"]["extent"].values())
+    assert -90.0 < box["grasp_yaw"] <= 90.0
+finally:
+    connector.close()
+
+print("Connector embodiment and privileged tools OK")
+
 # Start each supported out-of-process bundle far enough to receive its catalog.
 # Models are lazy, so this verifies code/dependency wiring without downloading
 # gated weights or requiring an LLM key.
@@ -216,7 +253,11 @@ PY
 python3 -m pip check
 pytest -q tests/runtime tests/connector/test_ik.py
 gap --help >/dev/null
-gap check >/dev/null
+python3 /ryzers/patch_skills.py --check
+if gap check 2>&1 | grep -i curobo; then
+    echo "gap check still lists cuRobo" >&2
+    exit 1
+fi
 gap run examples/grocery_packing_pyroki/packing_graph \
     --sim libero_object_packing/0 --validate-only >/dev/null
 echo "================ GaP / ROCm smoke test PASSED ================"

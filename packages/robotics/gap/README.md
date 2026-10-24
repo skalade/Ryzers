@@ -24,8 +24,8 @@ ryzers run
 
 The default command checks the installed dependency graph, upstream runtime
 and connector IK tests, GPU access, EGL rendering, a real PyRoKI Cartesian
-plan, tool-bundle startup, VAB and LIBERO-PRO environment steps, and graph
-validation. It does not download model weights.
+plan, tool-bundle startup, VAB and LIBERO-PRO environment steps, skill tool
+references, and graph validation. It does not download model weights.
 
 Open a shell for full workflows:
 

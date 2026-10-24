@@ -41,31 +41,6 @@ def replace_between(
 
 replace_once(
     "pyproject.toml",
-    '''# tool bundle); sim deps live in the [libero] extra. The connector's default
-# motion-planning backend is cuRobo, shipped by the open-robot-skills curobo
-# tool bundle; PyRoKi (CPU-JAX, in-process) is available as an opt-in
-# fallback via the [pyroki] extra for no-GPU machines / 6-DOF arms.
-''',
-    '''# tool bundle); sim deps live in the [libero] extra. This image installs
-# PyRoKI separately and uses it as the connector's motion backend.
-''',
-)
-replace_between(
-    "pyproject.toml",
-    "  # Robotics: URDF + robot descriptions + cuRobo",
-    '  "robot_descriptions>=1.16.0",\n',
-    "  # Robotics models and geometry.\n",
-)
-replace_between(
-    "pyproject.toml",
-    '  "robot_descriptions>=1.16.0",\n',
-    '  "trimesh",\n',
-    '''  "robot_descriptions>=1.16.0",
-  "yourdfpy>=0.0.56",
-''',
-)
-replace_once(
-    "pyproject.toml",
     '''# In-process PyRoKi IK fallback (CPU-JAX). Opt-in only — the default
 # connector backend is cuRobo (open-robot-skills[curobo]). Pick this extra
 # when running without a GPU, or when targeting 6-DOF YAM which cuRobo
@@ -148,9 +123,10 @@ replace_once(
     "gap/connector/core.py",
     '''        """Move along a straight Cartesian line to ``pose``.
 
-        The caller is responsible for providing target poses already in the
-        IK link frame (panda_hand for Franka, link_6 for YAM) — matching the
-        source's GoToPoseCartesian contract.
+        The target uses the same connector-public end-effector / TCP pose and
+        connector-world frame returned by :meth:`get_ee_pose`. Backend-specific
+        IK-link offsets are an implementation detail and must not be applied by
+        graph code.
         """
 ''',
     '''        """Move along a straight Cartesian line to ``pose``.

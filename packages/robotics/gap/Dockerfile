@@ -6,7 +6,7 @@ FROM ${BASE_IMAGE}
 
 SHELL ["/bin/bash", "-lc"]
 
-ARG GAP_REF=c8b5515df80d3029ca5dc7f7f1ec1c327b70bbea
+ARG GAP_REF=a7bdaf3962024b4e84bbe2a7ff0d96bd628d04d4
 ARG OPEN_ROBOT_SKILLS_REF=752dfbd96968d4d08379f8111765efbf6457800b
 ARG SAM3_REF=b26a5f330e05d321afb39d01d3d4881f258f65ff
 
@@ -66,6 +66,11 @@ RUN python3 /ryzers/apply_overrides.py /ryzers/graph-as-policy
 COPY prepare_grocery.py /ryzers/prepare_grocery.py
 RUN python3 /ryzers/prepare_grocery.py
 
+# Port cuRobo motion to connector motion; park bundles this image cannot run
+# in /ryzers/open-robot-skills-unsupported.
+COPY patch_skills.py /ryzers/patch_skills.py
+RUN python3 /ryzers/patch_skills.py /ryzers/open-robot-skills
+
 # Keep the base image's torch stack and tested numerical versions.
 RUN python3 - <<'PY' > /ryzers/constraints.txt
 import torch
@@ -89,7 +94,7 @@ RUN python3 -m pip install --no-cache-dir -c /ryzers/constraints.txt \
         -e /ryzers/graph-as-policy/gap-core \
         -e /ryzers/graph-as-policy/third_party/Variational-Automation-Benchmark \
         -e /ryzers/graph-as-policy/third_party/robosuite \
-        -e /ryzers/graph-as-policy \
+        -e "/ryzers/graph-as-policy[libero]" \
         -e /ryzers/open-robot-skills
 
 # PyRoKI and jaxls revisions tested with JAX 0.4.29.
